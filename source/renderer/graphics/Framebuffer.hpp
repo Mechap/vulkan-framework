@@ -11,17 +11,14 @@ class RenderPass;
 
 class Framebuffer {
   public:
-    Framebuffer(Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size);
+    Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size);
     ~Framebuffer();
-
-	Framebuffer(Framebuffer &&) noexcept = default;
-	Framebuffer &operator=(Framebuffer &&) noexcept = default;
 
     const VkFramebuffer &getFramebuffer() const { return framebuffer; }
     const Vector2u &getWindowSize() const { return window_size; }
 
   private:
-    Device &device;
+    const Device &device;
     const Vector2u window_size;
 
     VkFramebuffer framebuffer = nullptr;

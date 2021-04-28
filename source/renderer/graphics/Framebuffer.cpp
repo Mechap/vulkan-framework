@@ -6,7 +6,7 @@
 #include "renderer/Swapchain.hpp"
 #include "renderer/graphics/RenderPass.hpp"
 
-Framebuffer::Framebuffer(Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size)
+Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size)
     : device(device), window_size(window_size) {
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

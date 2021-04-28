@@ -35,8 +35,7 @@ int main() {
         std::vector<Framebuffer> framebuffers;
 
         for (std::size_t i = 0; i < swapchain.getImageViewCount(); ++i) {
-            Framebuffer framebuffer(device, swapchain.getImageViews()[i], renderPass, window_size);
-            framebuffers.emplace_back(std::move(framebuffer));
+            framebuffers.emplace_back(Framebuffer(device, swapchain.getImageViews()[i], renderPass, window_size));
         }
 
         auto renderFence = Fence(device);
