@@ -52,7 +52,7 @@ Instance::~Instance() {
 }
 
 VkInstance Instance::createInstance(
-    std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions) {
+    const std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions) {
     if constexpr (config::enable_validation_layers) {
         if (!checkValidationLayerSupport()) {
             throw std::runtime_error("failed to query validation layers!");

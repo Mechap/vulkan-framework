@@ -20,7 +20,7 @@ class Instance final : public NoCopy, public NoMove {
 
   private:
     VkInstance createInstance(
-        std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
+        const std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
 
     VkDebugUtilsMessengerEXT createDebugMessenger();
     void populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info);
