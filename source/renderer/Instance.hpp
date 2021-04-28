@@ -1,0 +1,35 @@
+#pragma once
+
+#include <GLFW/glfw3.h>
+#include <vulkan/vulkan_core.h>
+
+#include <string_view>
+#include <vector>
+
+#include "utility.hpp"
+
+class Window;
+
+class Instance final : public NoCopy, public NoMove {
+  public:
+    Instance(const Window &window, const std::string_view app_name , uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
+    ~Instance();
+
+    const VkInstance &getInstance() const { return instance; }
+    const VkSurfaceKHR &getSurface() const { return window_surface; }
+
+  private:
+    VkInstance createInstance(
+        std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
+
+    VkDebugUtilsMessengerEXT createDebugMessenger();
+    void populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info);
+
+    std::vector<const char *> getRequiredExtensions();
+    bool checkValidationLayerSupport();
+
+  private:
+    VkInstance instance = nullptr;
+    VkDebugUtilsMessengerEXT debug_messenger = nullptr;
+    VkSurfaceKHR window_surface = nullptr;
+};

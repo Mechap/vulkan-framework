@@ -1,0 +1,6 @@
+.cache
+.clangd
+.git
+build
+build-vs
+compile_commands.json
