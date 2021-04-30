@@ -26,6 +26,6 @@ Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, co
 
 Framebuffer::~Framebuffer() {
     if (framebuffer != VK_NULL_HANDLE) {
-        vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr);
+        DeletionQueue::push_function([=]() { vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr); });
     }
 }

@@ -64,10 +64,10 @@ Swapchain::Swapchain(const Device &device, const Instance &instance, const Windo
 
 Swapchain::~Swapchain() {
     for (const auto &view : image_views) {
-        vkDestroyImageView(device.getDevice(), view, nullptr);
+        DeletionQueue::push_function([=]() { vkDestroyImageView(device.getDevice(), view, nullptr); });
     }
 
-    vkDestroySwapchainKHR(device.getDevice(), swapchain, nullptr);
+    DeletionQueue::push_function([=]() { vkDestroySwapchainKHR(device.getDevice(), swapchain, nullptr); });
 }
 
 uint32_t Swapchain::acquireNextImage(const Semaphore &presentSemaphore) const {

@@ -8,13 +8,17 @@
 #include "utility.hpp"
 
 class Device;
-class RenderPass;
 class Swapchain;
+
+class CommandBuffer;
+class RenderPass;
 
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
     GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const Vector2u &window_size = {800, 600});
     ~GraphicsPipeline();
+
+    void bind(const CommandBuffer &commandBuffer) const;
 
   private:
     VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;

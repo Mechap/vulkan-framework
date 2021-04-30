@@ -63,7 +63,9 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     }
 }
 
-RenderPass::~RenderPass() { vkDestroyRenderPass(device.getDevice(), render_pass, nullptr); }
+RenderPass::~RenderPass() {
+    DeletionQueue::push_function([=]() { vkDestroyRenderPass(device.getDevice(), render_pass, nullptr); });
+}
 
 void RenderPass::begin(const Framebuffer &framebuffer, const VkClearValue &clearValue) {
     VkRenderPassBeginInfo beginInfo{};

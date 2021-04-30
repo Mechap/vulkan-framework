@@ -18,7 +18,9 @@ Device::Device(const Instance &instance) : window_surface(instance.getSurface())
     device = createLogicalDevice();
 }
 
-Device::~Device() { vkDestroyDevice(device, nullptr); }
+Device::~Device() {
+    DeletionQueue::push_function([=]() { vkDestroyDevice(device, nullptr); });
+}
 
 VkDevice Device::createLogicalDevice() {
     auto indices = findQueueFamilies(physical_device);
@@ -33,7 +35,7 @@ VkDevice Device::createLogicalDevice() {
 
         queueInfo.queueFamilyIndex = queueFamily;
         queueInfo.queueCount = 1;
-		queueInfo.pQueuePriorities = &queuePriority;
+        queueInfo.pQueuePriorities = &queuePriority;
 
         queueInfos.push_back(queueInfo);
     }

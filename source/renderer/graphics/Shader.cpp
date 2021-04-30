@@ -30,7 +30,9 @@ ShaderModule::ShaderModule(const Device &device, const std::string_view filename
     shader_type = shaderType;
 }
 
-ShaderModule::~ShaderModule() { vkDestroyShaderModule(device.getDevice(), shader_module, nullptr); }
+ShaderModule::~ShaderModule() {
+    DeletionQueue::push_function([=]() { vkDestroyShaderModule(device.getDevice(), shader_module, nullptr); });
+}
 
 VkShaderModule ShaderModule::create(std::vector<char> &&code) {
     VkShaderModuleCreateInfo shaderModuleInfo{};

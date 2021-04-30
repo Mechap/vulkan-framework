@@ -7,6 +7,7 @@
 #include "renderer/Swapchain.hpp"
 #include "renderer/graphics/RenderPass.hpp"
 #include "renderer/graphics/Shader.hpp"
+#include "renderer/sync/CommandBuffer.hpp"
 
 namespace {
     VkPipelineShaderStageCreateInfo createShaderStage(ShaderModule &&shader) {
@@ -107,7 +108,7 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
 
     auto viewportInfo = createViewportState(viewport, scissor);
 
-	color_blend_attachment = createColorBlendAttachmentState();
+    color_blend_attachment = createColorBlendAttachmentState();
     auto colorBlendInfo = createColorBlendState();
 
     // Shaders
@@ -151,8 +152,12 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
 }
 
 GraphicsPipeline::~GraphicsPipeline() {
-    vkDestroyPipelineLayout(device.getDevice(), pipeline_layout, nullptr);
-    vkDestroyPipeline(device.getDevice(), graphics_pipeline, nullptr);
+    DeletionQueue::push_function([=]() { vkDestroyPipelineLayout(device.getDevice(), pipeline_layout, nullptr); });
+    DeletionQueue::push_function([=]() { vkDestroyPipeline(device.getDevice(), graphics_pipeline, nullptr); });
+}
+
+void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {
+    vkCmdBindPipeline(commandBuffer.getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 }
 
 VkPipelineViewportStateCreateInfo GraphicsPipeline::createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const {

@@ -8,24 +8,26 @@ CommandPool::CommandPool(const Device &device, const QueueFamilyType type) : dev
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 
-	switch (type) {
-		case QueueFamilyType::GRAPHICS:
-			commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).graphics_family.value();
-			break;
+    switch (type) {
+        case QueueFamilyType::GRAPHICS:
+            commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).graphics_family.value();
+            break;
 
-		case QueueFamilyType::PRESENT:
-			commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).present_family.value();
-			break;
+        case QueueFamilyType::PRESENT:
+            commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).present_family.value();
+            break;
 
-		default:
-			throw std::runtime_error("command pool got an incorect queue family type!");
-	}
+        default:
+            throw std::runtime_error("command pool got an incorect queue family type!");
+    }
 
-    commandPoolInfo.flags = 0;
+    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     if (vkCreateCommandPool(device.getDevice(), &commandPoolInfo, nullptr, &command_pool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create command pool!");
+        throw std::runtime_error("failed to create command pool!");
     }
 }
 
-CommandPool::~CommandPool() { vkDestroyCommandPool(device.getDevice(), command_pool, nullptr); }
+CommandPool::~CommandPool() {
+    DeletionQueue::push_function([=]() { vkDestroyCommandPool(device.getDevice(), command_pool, nullptr); });
+}

@@ -45,10 +45,10 @@ Instance::Instance(const Window &window, const std::string_view app_name, uint32
 Instance::~Instance() {
     vkDestroySurfaceKHR(instance, window_surface, nullptr);
     if constexpr (config::enable_validation_layers) {
-        destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+        DeletionQueue::push_function([=]() { destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr); });
     }
 
-    vkDestroyInstance(instance, nullptr);
+    DeletionQueue::push_function([=]() { vkDestroyInstance(instance, nullptr); });
 }
 
 VkInstance Instance::createInstance(
@@ -114,8 +114,10 @@ VkDebugUtilsMessengerEXT Instance::createDebugMessenger() {
 void Instance::populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info) {
     debug_info = {};
     debug_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    debug_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debug_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debug_info.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_info.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     debug_info.pfnUserCallback = debugCallback;
 }
 
