@@ -11,9 +11,9 @@ class CommandBuffer final : public NoCopy, public NoMove {
   public:
     explicit CommandBuffer(const Device &device, const CommandPool &command_pool, uint32_t commandBufferCount);
 
-    void begin();
-    void end();
-    void reset();
+    void begin() const;
+    void end() const { vkEndCommandBuffer(command_buffer); }
+    void reset() const { vkResetCommandBuffer(command_buffer, 0); }
 
     const VkCommandBuffer &getCommandBuffer() const { return command_buffer; }
 

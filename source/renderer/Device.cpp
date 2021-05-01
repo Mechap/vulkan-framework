@@ -19,7 +19,7 @@ Device::Device(const Instance &instance) : window_surface(instance.getSurface())
 }
 
 Device::~Device() {
-    DeletionQueue::push_function([=]() { vkDestroyDevice(device, nullptr); });
+	vkDestroyDevice(device, nullptr);
 }
 
 VkDevice Device::createLogicalDevice() {

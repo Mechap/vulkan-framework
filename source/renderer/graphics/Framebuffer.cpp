@@ -29,3 +29,4 @@ Framebuffer::~Framebuffer() {
         DeletionQueue::push_function([=]() { vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr); });
     }
 }
+

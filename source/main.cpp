@@ -35,7 +35,8 @@ int main() {
         std::vector<Framebuffer> framebuffers;
 
         for (std::size_t i = 0; i < swapchain.getImageViewCount(); ++i) {
-            framebuffers.emplace_back(Framebuffer(device, swapchain.getImageViews()[i], renderPass, window_size));
+            auto imageViews = swapchain.getImageViews()[i];
+            framebuffers.emplace_back(Framebuffer(device, imageViews, renderPass, window_size));
         }
 
         auto renderFence = Fence(device);
@@ -49,7 +50,6 @@ int main() {
             window.updateEvents();
 
             renderFence.wait(std::numeric_limits<std::uint32_t>::max());
-
             renderFence.reset();
 
             auto swapchainImageIndex = swapchain.acquireNextImage(presentSemaphore);
@@ -103,6 +103,7 @@ int main() {
         }
 
         renderFence.wait(std::numeric_limits<std::uint32_t>::max());
+
         DeletionQueue::flush();
     } catch (const std::exception &e) {
         fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "[exception] : {}\n", e.what());

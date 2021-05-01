@@ -72,7 +72,7 @@ Swapchain::~Swapchain() {
 
 uint32_t Swapchain::acquireNextImage(const Semaphore &presentSemaphore) const {
     uint32_t swapchainImageIndex = 0;
-    vkAcquireNextImageKHR(device.getDevice(), swapchain, std::numeric_limits<std::uint64_t>::max(), presentSemaphore.getSemaphore(), nullptr, &swapchainImageIndex);
+    vkAcquireNextImageKHR(device.getDevice(), swapchain, std::numeric_limits<std::uint32_t>::max(), presentSemaphore.getSemaphore(), nullptr, &swapchainImageIndex);
 
     return swapchainImageIndex;
 }

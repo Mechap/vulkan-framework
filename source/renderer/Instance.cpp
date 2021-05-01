@@ -45,10 +45,11 @@ Instance::Instance(const Window &window, const std::string_view app_name, uint32
 Instance::~Instance() {
     vkDestroySurfaceKHR(instance, window_surface, nullptr);
     if constexpr (config::enable_validation_layers) {
-        DeletionQueue::push_function([=]() { destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr); });
+        destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
     }
 
-    DeletionQueue::push_function([=]() { vkDestroyInstance(instance, nullptr); });
+    vkDestroySurfaceKHR(instance, window_surface, nullptr);
+    vkDestroyInstance(instance, nullptr);
 }
 
 VkInstance Instance::createInstance(

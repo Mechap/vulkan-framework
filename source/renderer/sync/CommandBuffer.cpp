@@ -18,7 +18,7 @@ CommandBuffer::CommandBuffer(const Device &device, const CommandPool &command_po
     }
 }
 
-void CommandBuffer::begin() {
+void CommandBuffer::begin() const {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -28,6 +28,3 @@ void CommandBuffer::begin() {
         throw std::runtime_error("failed to record command buffers!");
     }
 }
-
-void CommandBuffer::end() { vkEndCommandBuffer(command_buffer); }
-void CommandBuffer::reset() { vkResetCommandBuffer(command_buffer, 0); }

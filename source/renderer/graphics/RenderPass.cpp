@@ -29,7 +29,7 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     std::vector<VkAttachmentReference> attachmentReferences;
-    attachmentReferences.push_back(VkAttachmentReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+    attachmentReferences.emplace_back(VkAttachmentReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 
     subpass.colorAttachmentCount = attachmentReferences.size();
     subpass.pColorAttachments = attachmentReferences.data();
@@ -37,6 +37,7 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     subpasses.push_back(subpass);
 
     // subpass dependency
+	/*
     VkSubpassDependency dependency{};
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -45,6 +46,7 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	*/
 
     // renderpass
     VkRenderPassCreateInfo renderPassInfo{};
@@ -55,8 +57,8 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     renderPassInfo.subpassCount = subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
 
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
+    // renderPassInfo.dependencyCount = 1;
+    // renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
