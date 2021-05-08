@@ -5,6 +5,7 @@
 #include "renderer/Device.hpp"
 #include "renderer/Swapchain.hpp"
 #include "renderer/graphics/RenderPass.hpp"
+#include "utility.hpp"
 
 Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size)
     : device(device), window_size(window_size) {
@@ -25,8 +26,12 @@ Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, co
 }
 
 Framebuffer::~Framebuffer() {
-    if (framebuffer != VK_NULL_HANDLE) {
-        DeletionQueue::push_function([=]() { vkDestroyFramebuffer(device.getDevice(), framebuffer, nullptr); });
+    if (framebuffer != nullptr) {
+        DeletionQueue::push_function([fb = framebuffer, dev = device.getDevice()]() { vkDestroyFramebuffer(dev, fb, nullptr); });
     }
 }
 
+Framebuffer::Framebuffer(Framebuffer &&other) noexcept : device(std::move(other.device)) {
+    framebuffer = other.framebuffer;
+    other.framebuffer = nullptr;
+}

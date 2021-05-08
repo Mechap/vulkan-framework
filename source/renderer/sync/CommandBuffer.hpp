@@ -9,7 +9,7 @@ class CommandPool;
 
 class CommandBuffer final : public NoCopy, public NoMove {
   public:
-    explicit CommandBuffer(const Device &device, const CommandPool &command_pool, uint32_t commandBufferCount);
+    explicit CommandBuffer(const Device &device, const CommandPool &command_pool, uint32_t commandBufferCount = 1);
 
     void begin() const;
     void end() const { vkEndCommandBuffer(command_buffer); }

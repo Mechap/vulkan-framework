@@ -56,7 +56,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -g>
 )
 
 # Vulkan

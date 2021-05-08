@@ -14,6 +14,9 @@ class Framebuffer {
     Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size);
     ~Framebuffer();
 
+	Framebuffer(Framebuffer &&other) noexcept;
+	Framebuffer &operator=(Framebuffer &&other) noexcept;
+
     const VkFramebuffer &getFramebuffer() const { return framebuffer; }
     const Vector2u &getWindowSize() const { return window_size; }
 

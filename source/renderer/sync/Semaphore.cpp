@@ -14,4 +14,7 @@ Semaphore::Semaphore(const Device &device) : device(device) {
     }
 }
 
-Semaphore::~Semaphore() { vkDestroySemaphore(device.getDevice(), semaphore, nullptr); }
+Semaphore::~Semaphore() {
+    DeletionQueue::push_function([dev = device.getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
+}
+

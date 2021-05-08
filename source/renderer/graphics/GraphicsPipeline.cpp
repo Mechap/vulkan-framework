@@ -152,8 +152,8 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
 }
 
 GraphicsPipeline::~GraphicsPipeline() {
-    DeletionQueue::push_function([=]() { vkDestroyPipelineLayout(device.getDevice(), pipeline_layout, nullptr); });
-    DeletionQueue::push_function([=]() { vkDestroyPipeline(device.getDevice(), graphics_pipeline, nullptr); });
+    DeletionQueue::push_function([dev = device.getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
+    DeletionQueue::push_function([dev = device.getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {

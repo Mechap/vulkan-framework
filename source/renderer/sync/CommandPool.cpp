@@ -29,5 +29,5 @@ CommandPool::CommandPool(const Device &device, const QueueFamilyType type) : dev
 }
 
 CommandPool::~CommandPool() {
-    DeletionQueue::push_function([=]() { vkDestroyCommandPool(device.getDevice(), command_pool, nullptr); });
+    DeletionQueue::push_function([dev = device.getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
 }

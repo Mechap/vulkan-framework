@@ -1,11 +1,12 @@
+#include <vulkan/vulkan_core.h>
 #define GLFW_INCLUDE_VULKAN
-#include "renderer/Instance.hpp"
-
 #include <fmt/color.h>
 
 #include <stdexcept>
+#include <type_traits>
 
 #include "config.hpp"
+#include "renderer/Instance.hpp"
 #include "window.hpp"
 
 namespace {
@@ -35,7 +36,7 @@ namespace {
     }
 }  // namespace
 
-Instance::Instance(const Window &window, const std::string_view app_name, uint32_t app_version) {
+Instance::Instance(const Window &window, std::string_view app_name, uint32_t app_version) {
     instance = createInstance(app_name, config::engine_name, app_version, config::engine_version, getRequiredExtensions());
     debug_messenger = createDebugMessenger();
 
@@ -43,17 +44,19 @@ Instance::Instance(const Window &window, const std::string_view app_name, uint32
 }
 
 Instance::~Instance() {
-    vkDestroySurfaceKHR(instance, window_surface, nullptr);
-    if constexpr (config::enable_validation_layers) {
-        destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
-    }
+    /*
+vkDestroySurfaceKHR(instance, window_surface, nullptr);
+if constexpr (config::enable_validation_layers) {
+    destroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+}
 
-    vkDestroySurfaceKHR(instance, window_surface, nullptr);
-    vkDestroyInstance(instance, nullptr);
+vkDestroySurfaceKHR(instance, window_surface, nullptr);
+vkDestroyInstance(instance, nullptr);
+    */
 }
 
 VkInstance Instance::createInstance(
-    const std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions) {
+    std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions) {
     if constexpr (config::enable_validation_layers) {
         if (!checkValidationLayerSupport()) {
             throw std::runtime_error("failed to query validation layers!");

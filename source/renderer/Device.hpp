@@ -18,15 +18,16 @@ struct QueueFanmilyIndices final {
 
 enum class QueueFamilyType { GRAPHICS, PRESENT };
 
-class Device final : public NoCopy, public NoMove {
+class Device final : public NoCopy {
   public:
     explicit Device(const Instance &instance);
     ~Device();
 
-    const VkDevice &getDevice() const { return device; }
-    const VkPhysicalDevice &getPhysicalDevice() const { return physical_device; }
+    [[nodiscard]] const VkDevice &getDevice() const { return device; }
+    [[nodiscard]] const VkPhysicalDevice &getPhysicalDevice() const { return physical_device; }
 
-    const VkQueue &getQueue(QueueFamilyType type) {
+	template <QueueFamilyType type>
+    [[nodiscard]] const VkQueue &getQueue() {
         switch (type) {
             case QueueFamilyType::GRAPHICS:
                 return graphics_queue;
@@ -38,11 +39,6 @@ class Device final : public NoCopy, public NoMove {
                 break;
         }
     }
-
-    /*
-const VkQueue &getGraphicsQueue() const { return graphics_queue; }
-const VkQueue &getPresentQueue() const { return present_queue; }
-    */
 
     QueueFanmilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice) const;
 

@@ -18,7 +18,7 @@ class RenderPass final : public NoCopy, public NoMove {
     RenderPass(const Device &device, const Swapchain &swapchain, const CommandBuffer &commandBuffer);
     ~RenderPass();
 
-    void begin(const Framebuffer &framebuffer, const VkClearValue &clearValue);
+    void begin(const Framebuffer &framebuffer, const VkClearValue clearValue);
 	void end();
 
   public:

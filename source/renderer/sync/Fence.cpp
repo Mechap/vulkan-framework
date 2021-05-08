@@ -14,7 +14,9 @@ Fence::Fence(const Device &device) : device(device) {
     }
 }
 
-Fence::~Fence() { vkDestroyFence(device.getDevice(), fence, nullptr); }
+Fence::~Fence() {
+    DeletionQueue::push_function([dev = device.getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
+}
 
 void Fence::reset() { vkResetFences(device.getDevice(), 1, &fence); }
 void Fence::wait(uint64_t timeout) { vkWaitForFences(device.getDevice(), 1, &fence, true, timeout); }

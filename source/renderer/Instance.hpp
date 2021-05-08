@@ -12,15 +12,15 @@ class Window;
 
 class Instance final : public NoCopy, public NoMove {
   public:
-    Instance(const Window &window, const std::string_view app_name , uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
+    Instance(const Window &window, std::string_view app_name , uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
     ~Instance();
 
-    const VkInstance &getInstance() const { return instance; }
-    const VkSurfaceKHR &getSurface() const { return window_surface; }
+    [[nodiscard]] const VkInstance &getInstance() const { return instance; }
+    [[nodiscard]] const VkSurfaceKHR &getSurface() const { return window_surface; }
 
   private:
     VkInstance createInstance(
-        const std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
+        std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
 
     VkDebugUtilsMessengerEXT createDebugMessenger();
     void populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info);

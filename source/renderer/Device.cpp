@@ -19,7 +19,7 @@ Device::Device(const Instance &instance) : window_surface(instance.getSurface())
 }
 
 Device::~Device() {
-	vkDestroyDevice(device, nullptr);
+	// vkDestroyDevice(device, nullptr);
 }
 
 VkDevice Device::createLogicalDevice() {

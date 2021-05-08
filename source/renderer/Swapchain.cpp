@@ -64,10 +64,9 @@ Swapchain::Swapchain(const Device &device, const Instance &instance, const Windo
 
 Swapchain::~Swapchain() {
     for (const auto &view : image_views) {
-        DeletionQueue::push_function([=]() { vkDestroyImageView(device.getDevice(), view, nullptr); });
+        DeletionQueue::push_function([dev = device.getDevice(), v = view]() { vkDestroyImageView(dev, v, nullptr); });
     }
-
-    DeletionQueue::push_function([=]() { vkDestroySwapchainKHR(device.getDevice(), swapchain, nullptr); });
+    DeletionQueue::push_function([dev = device.getDevice(), sc = swapchain]() { vkDestroySwapchainKHR(dev, sc, nullptr); });
 }
 
 uint32_t Swapchain::acquireNextImage(const Semaphore &presentSemaphore) const {

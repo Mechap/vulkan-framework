@@ -12,7 +12,7 @@ class Swapchain;
 
 class Application {
   public:
-    Application(const std::string_view application_name, const Vector2i window_size = {800, 600});
+    Application(std::string_view application_name, const Vector2i window_size = {800, 600});
 
 	void update();
 

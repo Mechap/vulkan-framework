@@ -26,12 +26,12 @@ class Swapchain final : public NoCopy, public NoMove {
     Swapchain(const Device &device, const Instance &instance, const Window &window);
     ~Swapchain();
 
-    const VkSwapchainKHR &getSwapchain() const { return swapchain; }
-    const VkFormat &getFormat() const { return swapchain_image_format; }
-    const VkExtent2D &getExtent() const { return swapchain_extent; }
+    [[nodiscard]] const VkSwapchainKHR &getSwapchain() const { return swapchain; }
+    [[nodiscard]] const VkFormat &getFormat() const { return swapchain_image_format; }
+    [[nodiscard]] const VkExtent2D &getExtent() const { return swapchain_extent; }
 
-    std::size_t getImageViewCount() const { return image_views.size(); }
-    std::span<const VkImageView> getImageViews() const { return image_views; }
+    [[nodiscard]] std::size_t getImageViewCount() const { return image_views.size(); }
+    [[nodiscard]] std::span<const VkImageView> getImageViews() const { return image_views; }
 
     uint32_t acquireNextImage(const Semaphore &presentSemaphore) const;
 

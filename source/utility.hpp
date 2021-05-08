@@ -21,13 +21,13 @@ struct NoMove {
 struct DeletionQueue final {
 	inline static std::vector<std::function<void()>> deletors;
 
-	static void push_function(std::function<void()> &&function) noexcept {
+	static void push_function(std::function<void()> &&function) {
 		deletors.push_back(std::move(function));
 	}
 
-	static void flush() noexcept {
+	static void flush() {
 		for (auto it : deletors | std::views::reverse) {
-			(it)();
+			std::invoke(it);
 		}
 
 		deletors.clear();

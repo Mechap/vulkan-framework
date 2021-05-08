@@ -1,4 +1,5 @@
 #include <fmt/color.h>
+#include <vulkan/vulkan_core.h>
 
 #include <cmath>
 #include <exception>
@@ -23,26 +24,26 @@ int main() {
         auto window = Window(WindowSpec("application", window_size));
 
         auto instance = Instance(window, "application");
+
         auto device = Device(instance);
         auto swapchain = Swapchain(device, instance, window);
 
         auto commandPool = CommandPool(device, QueueFamilyType::GRAPHICS);
-        auto commandBuffer = CommandBuffer(device, commandPool, 1);
+        auto commandBuffer = CommandBuffer(device, commandPool);
 
         auto renderPass = RenderPass(device, swapchain, commandBuffer);
         auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain);
-
-        std::vector<Framebuffer> framebuffers;
-
-        for (std::size_t i = 0; i < swapchain.getImageViewCount(); ++i) {
-            auto imageViews = swapchain.getImageViews()[i];
-            framebuffers.emplace_back(Framebuffer(device, imageViews, renderPass, window_size));
-        }
 
         auto renderFence = Fence(device);
 
         auto presentSemaphore = Semaphore(device);
         auto renderSemaphore = Semaphore(device);
+
+        std::vector<Framebuffer> framebuffers;
+
+        for (std::size_t i = 0; i < swapchain.getImageViewCount(); ++i) {
+            framebuffers.emplace_back(device, swapchain.getImageViews()[i], renderPass, window_size);
+        }
 
         uint32_t frameNumber = 0;
 
@@ -85,7 +86,7 @@ int main() {
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &commandBuffer.getCommandBuffer();
 
-            vkQueueSubmit(device.getQueue(QueueFamilyType::GRAPHICS), 1, &submit, renderFence.getFence());
+            vkQueueSubmit(device.getQueue<QueueFamilyType::GRAPHICS>(), 1, &submit, renderFence.getFence());
 
             VkPresentInfoKHR presentInfo{};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -97,13 +98,18 @@ int main() {
             presentInfo.pWaitSemaphores = &renderSemaphore.getSemaphore();
 
             presentInfo.pImageIndices = &swapchainImageIndex;
-            vkQueuePresentKHR(device.getQueue(QueueFamilyType::PRESENT), &presentInfo);
+            vkQueuePresentKHR(device.getQueue<QueueFamilyType::PRESENT>(), &presentInfo);
 
             frameNumber++;
         }
 
         renderFence.wait(std::numeric_limits<std::uint32_t>::max());
 
+        /*
+		for (auto &framebuffer : framebuffers) {
+                vkDestroyFramebuffer(device.getDevice(), framebuffer.getFramebuffer(), nullptr);
+		}
+        */
         DeletionQueue::flush();
     } catch (const std::exception &e) {
         fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "[exception] : {}\n", e.what());
