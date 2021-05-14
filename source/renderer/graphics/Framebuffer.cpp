@@ -22,13 +22,13 @@ Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, co
 
     if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create framebuffer!");
-    }
+    } else {
+    	DeletionQueue::push_function([fb = framebuffer, dev = device.getDevice()]() { vkDestroyFramebuffer(dev, fb, nullptr); });
+	}
 }
 
 Framebuffer::~Framebuffer() {
-    if (framebuffer != nullptr) {
-        DeletionQueue::push_function([fb = framebuffer, dev = device.getDevice()]() { vkDestroyFramebuffer(dev, fb, nullptr); });
-    }
+    //DeletionQueue::push_function([fb = framebuffer, dev = device.getDevice()]() { vkDestroyFramebuffer(dev, fb, nullptr); });
 }
 
 Framebuffer::Framebuffer(Framebuffer &&other) noexcept : device(std::move(other.device)) {

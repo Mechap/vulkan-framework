@@ -25,9 +25,7 @@ CommandPool::CommandPool(const Device &device, const QueueFamilyType type) : dev
 
     if (vkCreateCommandPool(device.getDevice(), &commandPoolInfo, nullptr, &command_pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
-    }
-}
-
-CommandPool::~CommandPool() {
-    DeletionQueue::push_function([dev = device.getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
+    } else {
+    	DeletionQueue::push_function([dev = device.getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
+	}
 }

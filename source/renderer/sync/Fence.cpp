@@ -11,11 +11,13 @@ Fence::Fence(const Device &device) : device(device) {
 
     if (vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
         throw std::runtime_error("failed to create fence!");
-    }
+    } else {
+    	DeletionQueue::push_function([dev = device.getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
+	}
 }
 
 Fence::~Fence() {
-    DeletionQueue::push_function([dev = device.getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
+    // DeletionQueue::push_function([dev = device.getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
 }
 
 void Fence::reset() { vkResetFences(device.getDevice(), 1, &fence); }

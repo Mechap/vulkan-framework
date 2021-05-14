@@ -43,7 +43,7 @@ namespace {
     }
 }  // namespace
 
-Swapchain::Swapchain(const Device &device, const Instance &instance, const Window &window) : surface(instance.getSurface()), device(device) {
+Swapchain::Swapchain(const Device &device, const Instance &instance, const Window &window) : surface(instance.getSurface()), device(std::move(device)) {
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device.getPhysicalDevice(), surface, &properties.capabilities);
 
     auto surfaceFormatCount = 0u;
@@ -60,9 +60,7 @@ Swapchain::Swapchain(const Device &device, const Instance &instance, const Windo
 
     swapchain = create(window.getWindow());
     createViews();
-}
 
-Swapchain::~Swapchain() {
     for (const auto &view : image_views) {
         DeletionQueue::push_function([dev = device.getDevice(), v = view]() { vkDestroyImageView(dev, v, nullptr); });
     }
@@ -71,7 +69,7 @@ Swapchain::~Swapchain() {
 
 uint32_t Swapchain::acquireNextImage(const Semaphore &presentSemaphore) const {
     uint32_t swapchainImageIndex = 0;
-    vkAcquireNextImageKHR(device.getDevice(), swapchain, std::numeric_limits<std::uint32_t>::max(), presentSemaphore.getSemaphore(), nullptr, &swapchainImageIndex);
+    vkAcquireNextImageKHR(device.getDevice(), swapchain, std::numeric_limits<std::uint64_t>::max(), presentSemaphore.getSemaphore(), nullptr, &swapchainImageIndex);
 
     return swapchainImageIndex;
 }

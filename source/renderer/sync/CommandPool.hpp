@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+
 #include "utility.hpp"
 
 class Device;
@@ -12,7 +13,6 @@ class Swapchain;
 class CommandPool : public NoCopy, public NoMove {
   public:
     CommandPool(const Device &device, const QueueFamilyType type);
-    ~CommandPool();
 
     const VkCommandPool &getPool() const { return command_pool; }
 

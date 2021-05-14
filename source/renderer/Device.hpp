@@ -3,7 +3,6 @@
 #include <vulkan/vulkan_core.h>
 
 #include <optional>
-#include <type_traits>
 
 #include "utility.hpp"
 
@@ -26,7 +25,7 @@ class Device final : public NoCopy {
     [[nodiscard]] const VkDevice &getDevice() const { return device; }
     [[nodiscard]] const VkPhysicalDevice &getPhysicalDevice() const { return physical_device; }
 
-	template <QueueFamilyType type>
+    template <QueueFamilyType type>
     [[nodiscard]] const VkQueue &getQueue() {
         switch (type) {
             case QueueFamilyType::GRAPHICS:

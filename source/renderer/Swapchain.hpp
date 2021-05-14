@@ -24,7 +24,6 @@ struct SwapchainProperties {
 class Swapchain final : public NoCopy, public NoMove {
   public:
     Swapchain(const Device &device, const Instance &instance, const Window &window);
-    ~Swapchain();
 
     [[nodiscard]] const VkSwapchainKHR &getSwapchain() const { return swapchain; }
     [[nodiscard]] const VkFormat &getFormat() const { return swapchain_image_format; }
@@ -43,6 +42,7 @@ class Swapchain final : public NoCopy, public NoMove {
     VkSwapchainKHR swapchain = nullptr;
 
     const VkSurfaceKHR &surface;
+
     const Device &device;
 
     SwapchainProperties properties;

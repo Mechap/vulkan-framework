@@ -148,12 +148,10 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
 
     if (vkCreateGraphicsPipelines(device.getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
-    }
-}
-
-GraphicsPipeline::~GraphicsPipeline() {
-    DeletionQueue::push_function([dev = device.getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
-    DeletionQueue::push_function([dev = device.getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
+    } else {
+    	DeletionQueue::push_function([dev = device.getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
+		DeletionQueue::push_function([dev = device.getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
+	}
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {

@@ -16,7 +16,6 @@ class RenderPass;
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
     GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const Vector2u &window_size = {800, 600});
-    ~GraphicsPipeline();
 
     void bind(const CommandBuffer &commandBuffer) const;
 

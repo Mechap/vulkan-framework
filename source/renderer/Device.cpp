@@ -8,6 +8,9 @@
 
 #include "config.hpp"
 #include "renderer/Instance.hpp"
+#include "renderer/sync/CommandBuffer.hpp"
+#include "renderer/sync/Fence.hpp"
+#include "renderer/sync/Semaphore.hpp"
 
 Device::Device(const Instance &instance) : window_surface(instance.getSurface()) {
     physical_device = pickPhysicalDevices(instance);
@@ -18,9 +21,7 @@ Device::Device(const Instance &instance) : window_surface(instance.getSurface())
     device = createLogicalDevice();
 }
 
-Device::~Device() {
-	// vkDestroyDevice(device, nullptr);
-}
+Device::~Device() { vkDestroyDevice(device, nullptr); }
 
 VkDevice Device::createLogicalDevice() {
     auto indices = findQueueFamilies(physical_device);

@@ -50,17 +50,16 @@ int main() {
         while (!window.shouldClose()) {
             window.updateEvents();
 
-            renderFence.wait(std::numeric_limits<std::uint32_t>::max());
+            renderFence.wait(std::numeric_limits<std::uint64_t>::max());
             renderFence.reset();
 
             auto swapchainImageIndex = swapchain.acquireNextImage(presentSemaphore);
 
-            commandBuffer.reset();
             commandBuffer.begin();
 
             VkClearValue clearValue;
             float flash = std::abs(std::sin(frameNumber / 120.f));
-            clearValue.color = {{0.f, 0.f, flash, 1.0f}};
+            clearValue.color = {{flash, 0.f, 0.f, 1.0f}};
 
             renderPass.begin(framebuffers[swapchainImageIndex], clearValue);
             graphicsPipeline.bind(commandBuffer);
@@ -103,13 +102,8 @@ int main() {
             frameNumber++;
         }
 
-        renderFence.wait(std::numeric_limits<std::uint32_t>::max());
+        renderFence.wait(std::numeric_limits<std::uint64_t>::max());
 
-        /*
-		for (auto &framebuffer : framebuffers) {
-                vkDestroyFramebuffer(device.getDevice(), framebuffer.getFramebuffer(), nullptr);
-		}
-        */
         DeletionQueue::flush();
     } catch (const std::exception &e) {
         fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "[exception] : {}\n", e.what());

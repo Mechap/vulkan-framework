@@ -7,7 +7,7 @@
 #include "renderer/graphics/Framebuffer.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 
-RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const CommandBuffer &commandBuffer) : device(device), command_buffer(commandBuffer) {
+RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const CommandBuffer &commandBuffer) : device(device), command_buffer(commandBuffer), swapchain(swapchain) {
     // color attachment
     VkAttachmentDescription color_attachment{};
     color_attachment.format = swapchain.getFormat();
@@ -17,7 +17,7 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 
     color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 
     color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -37,16 +37,14 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     subpasses.push_back(subpass);
 
     // subpass dependency
-	/*
     VkSubpassDependency dependency{};
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	*/
 
     // renderpass
     VkRenderPassCreateInfo renderPassInfo{};
@@ -57,16 +55,14 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     renderPassInfo.subpassCount = subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
 
-    // renderPassInfo.dependencyCount = 1;
-    // renderPassInfo.pDependencies = &dependency;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
-    }
-}
-
-RenderPass::~RenderPass() {
-    DeletionQueue::push_function([dev = device.getDevice(), rp = render_pass]() { vkDestroyRenderPass(dev, rp, nullptr); });
+    } else {
+    	DeletionQueue::push_function([dev = device.getDevice(), rp = render_pass]() { vkDestroyRenderPass(dev, rp, nullptr); });
+	}
 }
 
 void RenderPass::begin(const Framebuffer &framebuffer, const VkClearValue clearValue) {
@@ -76,7 +72,7 @@ void RenderPass::begin(const Framebuffer &framebuffer, const VkClearValue clearV
     beginInfo.renderPass = render_pass;
     beginInfo.framebuffer = framebuffer.getFramebuffer();
     beginInfo.renderArea.offset = {0, 0};
-    beginInfo.renderArea.extent = {framebuffer.getWindowSize().x, framebuffer.getWindowSize().y};
+    beginInfo.renderArea.extent = swapchain.getExtent();
     beginInfo.clearValueCount = 1;
     beginInfo.pClearValues = &clearValue;
 

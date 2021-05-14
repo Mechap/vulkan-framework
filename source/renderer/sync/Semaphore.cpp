@@ -11,10 +11,12 @@ Semaphore::Semaphore(const Device &device) : device(device) {
 
     if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS) {
         throw std::runtime_error("failed to create semaphore!");
-    }
+    } else {
+    	DeletionQueue::push_function([dev = device.getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
+	}
 }
 
 Semaphore::~Semaphore() {
-    DeletionQueue::push_function([dev = device.getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
+    // DeletionQueue::push_function([dev = device.getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
 }
 

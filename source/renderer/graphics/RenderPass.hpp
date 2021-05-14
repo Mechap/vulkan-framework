@@ -16,7 +16,6 @@ class CommandBuffer;
 class RenderPass final : public NoCopy, public NoMove {
   public:
     RenderPass(const Device &device, const Swapchain &swapchain, const CommandBuffer &commandBuffer);
-    ~RenderPass();
 
     void begin(const Framebuffer &framebuffer, const VkClearValue clearValue);
 	void end();
@@ -30,6 +29,7 @@ class RenderPass final : public NoCopy, public NoMove {
 
   private:
     const Device &device;
+	const Swapchain &swapchain;
 	const CommandBuffer &command_buffer;
 
     VkRenderPass render_pass = nullptr;
