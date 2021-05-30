@@ -7,7 +7,7 @@
 #include "renderer/graphics/Framebuffer.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 
-RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const CommandBuffer &commandBuffer) : device(device), command_buffer(commandBuffer), swapchain(swapchain) {
+RenderPass::RenderPass(const Device &device, const Swapchain &swapchain) : device(device), swapchain(swapchain) {
     // color attachment
     VkAttachmentDescription color_attachment{};
     color_attachment.format = swapchain.getFormat();
@@ -28,15 +28,17 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-    std::vector<VkAttachmentReference> attachmentReferences;
-    attachmentReferences.emplace_back(VkAttachmentReference{0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+	VkAttachmentReference attachmentReference{};
+	attachmentReference.attachment = 0;
+	attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    subpass.colorAttachmentCount = attachmentReferences.size();
-    subpass.pColorAttachments = attachmentReferences.data();
+    subpass.colorAttachmentCount = 1; 
+    subpass.pColorAttachments = &attachmentReference; 
 
     subpasses.push_back(subpass);
 
     // subpass dependency
+	/*
     VkSubpassDependency dependency{};
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -45,6 +47,7 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	*/
 
     // renderpass
     VkRenderPassCreateInfo renderPassInfo{};
@@ -55,8 +58,10 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
     renderPassInfo.subpassCount = subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
 
+	/*
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
+	*/
 
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
@@ -65,18 +70,20 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain, const C
 	}
 }
 
-void RenderPass::begin(const Framebuffer &framebuffer, const VkClearValue clearValue) {
+void RenderPass::begin(const CommandBuffer &commandBuffer, const Framebuffer &framebuffer, const VkClearValue clearValue) {
     VkRenderPassBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
     beginInfo.renderPass = render_pass;
     beginInfo.framebuffer = framebuffer.getFramebuffer();
-    beginInfo.renderArea.offset = {0, 0};
+	beginInfo.renderArea.offset.x = 0;
+	beginInfo.renderArea.offset.y = 0;
     beginInfo.renderArea.extent = swapchain.getExtent();
+
     beginInfo.clearValueCount = 1;
     beginInfo.pClearValues = &clearValue;
 
-    vkCmdBeginRenderPass(command_buffer.getCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffer.getCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void RenderPass::end() { vkCmdEndRenderPass(command_buffer.getCommandBuffer()); }
+void RenderPass::end(const CommandBuffer &commandBuffer) { vkCmdEndRenderPass(commandBuffer.getCommandBuffer()); }

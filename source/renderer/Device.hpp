@@ -26,7 +26,7 @@ class Device final : public NoCopy {
     [[nodiscard]] const VkPhysicalDevice &getPhysicalDevice() const { return physical_device; }
 
     template <QueueFamilyType type>
-    [[nodiscard]] const VkQueue &getQueue() {
+    [[nodiscard]] constexpr const VkQueue &getQueue() const {
         switch (type) {
             case QueueFamilyType::GRAPHICS:
                 return graphics_queue;
@@ -60,6 +60,5 @@ class Device final : public NoCopy {
     VkQueue graphics_queue;
     VkQueue present_queue;
 
-    const VkSurfaceKHR &window_surface;
+    const VkSurfaceKHR window_surface;
 };
-

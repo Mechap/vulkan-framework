@@ -50,13 +50,12 @@ set(sources
 	${SOURCE_DIR}/renderer/sync/Semaphore.cpp
 	${SOURCE_DIR}/renderer/sync/Fence.cpp
 )
-
 add_executable(${PROJECT_NAME} ${sources})
 target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -g>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
 )
 
 # Vulkan

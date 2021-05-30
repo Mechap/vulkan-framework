@@ -41,9 +41,9 @@ class Swapchain final : public NoCopy, public NoMove {
   private:
     VkSwapchainKHR swapchain = nullptr;
 
-    const VkSurfaceKHR &surface;
+    const VkSurfaceKHR surface;
 
-    const Device &device;
+	const Device &device;
 
     SwapchainProperties properties;
     VkFormat swapchain_image_format;

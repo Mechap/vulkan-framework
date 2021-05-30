@@ -17,10 +17,9 @@ enum class ShaderType {
 class ShaderModule : public NoCopy, public NoMove {
   public:
     ShaderModule(const Device &device, const std::string_view filename, ShaderType shaderType);
-    ~ShaderModule();
 
-    ShaderType getType() const { return shader_type; }
-    const VkShaderModule &getShaderModule() const { return shader_module; }
+    [[nodiscard]] ShaderType getType() const { return shader_type; }
+    [[nodiscard]] const VkShaderModule &getShaderModule() const { return shader_module; }
 
   private:
     VkShaderModule create(std::vector<char> &&code);

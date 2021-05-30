@@ -22,7 +22,6 @@ int main() {
         constexpr Vector2<uint32_t> window_size = {800, 600};
 
         auto window = Window(WindowSpec("application", window_size));
-
         auto instance = Instance(window, "application");
 
         auto device = Device(instance);
@@ -31,7 +30,7 @@ int main() {
         auto commandPool = CommandPool(device, QueueFamilyType::GRAPHICS);
         auto commandBuffer = CommandBuffer(device, commandPool);
 
-        auto renderPass = RenderPass(device, swapchain, commandBuffer);
+        auto renderPass = RenderPass(device, swapchain);
         auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain);
 
         auto renderFence = Fence(device);
@@ -41,8 +40,8 @@ int main() {
 
         std::vector<Framebuffer> framebuffers;
 
-        for (std::size_t i = 0; i < swapchain.getImageViewCount(); ++i) {
-            framebuffers.emplace_back(device, swapchain.getImageViews()[i], renderPass, window_size);
+        for (std::uint32_t i = 0; i < swapchain.getImageViewCount(); ++i) {
+            framebuffers.emplace_back(device, swapchain.getImageViews()[i], renderPass, swapchain);
         }
 
         uint32_t frameNumber = 0;
@@ -55,19 +54,20 @@ int main() {
 
             auto swapchainImageIndex = swapchain.acquireNextImage(presentSemaphore);
 
+            commandBuffer.reset();
             commandBuffer.begin();
 
             VkClearValue clearValue;
             float flash = std::abs(std::sin(frameNumber / 120.f));
             clearValue.color = {{flash, 0.f, 0.f, 1.0f}};
 
-            renderPass.begin(framebuffers[swapchainImageIndex], clearValue);
+            renderPass.begin(commandBuffer, framebuffers[swapchainImageIndex], clearValue);
+
             graphicsPipeline.bind(commandBuffer);
 
             vkCmdDraw(commandBuffer.getCommandBuffer(), 3, 1, 0, 0);
 
-            renderPass.end();
-
+            renderPass.end(commandBuffer);
             commandBuffer.end();
 
             VkSubmitInfo submit{};

@@ -12,9 +12,10 @@ namespace {
         std::ifstream file(filename.data(), std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             throw std::fstream::failure(fmt::format("couldn't load spir-v file at : {}\n", filename));
-        }
+        } else {
+		}
 
-        auto fileSize = file.tellg();
+        auto fileSize = static_cast<std::size_t>(file.tellg());
         std::vector<char> buffer(fileSize);
 
         file.seekg(0);
@@ -28,9 +29,7 @@ namespace {
 ShaderModule::ShaderModule(const Device &device, const std::string_view filename, ShaderType shaderType) : device(device) {
     shader_module = create(readFile(filename));
     shader_type = shaderType;
-}
 
-ShaderModule::~ShaderModule() {
     DeletionQueue::push_function([dev = device.getDevice(), sm = shader_module]() { vkDestroyShaderModule(dev, sm, nullptr); });
 }
 
@@ -41,7 +40,7 @@ VkShaderModule ShaderModule::create(std::vector<char> &&code) {
     shaderModuleInfo.codeSize = code.size();
     shaderModuleInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-    VkShaderModule shaderModule = nullptr;
+    VkShaderModule shaderModule;
     if (vkCreateShaderModule(device.getDevice(), &shaderModuleInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         throw std::runtime_error("failed to create shader module!");
     }

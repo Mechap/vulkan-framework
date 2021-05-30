@@ -9,7 +9,6 @@ class Device;
 class Semaphore final : public NoCopy, public NoMove {
   public:
     explicit Semaphore(const Device &device);
-    ~Semaphore();
 
     const VkSemaphore &getSemaphore() const { return semaphore; }
 

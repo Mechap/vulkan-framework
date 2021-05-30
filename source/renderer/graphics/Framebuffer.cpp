@@ -7,17 +7,17 @@
 #include "renderer/graphics/RenderPass.hpp"
 #include "utility.hpp"
 
-Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Vector2u &window_size)
-    : device(device), window_size(window_size) {
+Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Swapchain &extent)
+    : device(device)  {
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 
     framebufferInfo.renderPass = renderpass.getPass();
-    framebufferInfo.attachmentCount = renderpass.getAttachmentCount();
+    framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = &attachment;
 
-    framebufferInfo.width = window_size.x;
-    framebufferInfo.height = window_size.y;
+    framebufferInfo.width = extent.getExtent().width;
+    framebufferInfo.height = extent.getExtent().height;
     framebufferInfo.layers = 1;
 
     if (vkCreateFramebuffer(device.getDevice(), &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
@@ -27,11 +27,16 @@ Framebuffer::Framebuffer(const Device &device, const VkImageView &attachment, co
 	}
 }
 
-Framebuffer::~Framebuffer() {
-    //DeletionQueue::push_function([fb = framebuffer, dev = device.getDevice()]() { vkDestroyFramebuffer(dev, fb, nullptr); });
-}
-
-Framebuffer::Framebuffer(Framebuffer &&other) noexcept : device(std::move(other.device)) {
+Framebuffer::Framebuffer(Framebuffer &&other) noexcept : device(other.device) {
     framebuffer = other.framebuffer;
     other.framebuffer = nullptr;
+}
+
+Framebuffer &Framebuffer::operator=(Framebuffer &&other) noexcept {
+	device = other.device;
+
+	framebuffer = other.framebuffer;
+	other.framebuffer = nullptr;
+
+	return *this;
 }

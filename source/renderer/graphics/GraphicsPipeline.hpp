@@ -15,7 +15,7 @@ class RenderPass;
 
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
-    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const Vector2u &window_size = {800, 600});
+    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain);
 
     void bind(const CommandBuffer &commandBuffer) const;
 
@@ -23,7 +23,7 @@ class GraphicsPipeline : public NoCopy, public NoMove {
     VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;
     VkPipelineColorBlendStateCreateInfo createColorBlendState() const;
 
-    static VkPipelineLayoutCreateInfo createPipeline();
+    static VkPipelineLayoutCreateInfo createPipelineLayout();
 
   private:
     const Device &device;

@@ -1,8 +1,10 @@
 #pragma once
 
+#include <algorithm>
 #include <deque>
 #include <functional>
 #include <ranges>
+#include <vector>
 
 struct NoCopy {
     NoCopy() = default;

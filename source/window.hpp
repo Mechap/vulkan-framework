@@ -21,7 +21,7 @@ class Window final {
     ~Window();
 
     void updateEvents() const { glfwPollEvents(); }
-    bool shouldClose() const { return glfwWindowShouldClose(window); }
+    [[nodiscard]] bool shouldClose() const { return glfwWindowShouldClose(window); }
 
     [[nodiscard]] GLFWwindow *getWindow() const { return window; }
 

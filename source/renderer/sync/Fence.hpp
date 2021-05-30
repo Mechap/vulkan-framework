@@ -9,7 +9,6 @@ class Device;
 class Fence final : public NoCopy, public NoMove {
   public:
     explicit Fence(const Device &device);
-    ~Fence();
 
 	void reset();
 	void wait(uint64_t timeout);
