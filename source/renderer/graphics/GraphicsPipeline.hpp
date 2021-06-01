@@ -2,9 +2,13 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <array>
+#include <span>
 #include <vector>
 
 #include "math/Vector2.hpp"
+#include "math/Vector3.hpp"
+#include "renderer/Device.hpp"
 #include "utility.hpp"
 
 class Device;
@@ -13,20 +17,47 @@ class Swapchain;
 class CommandBuffer;
 class RenderPass;
 
+struct VertexInputDescription {
+    std::vector<VkVertexInputBindingDescription> bindings;
+    std::vector<VkVertexInputAttributeDescription> attributes;
+
+    VkPipelineVertexInputStateCreateFlags flags = 0;
+};
+
+struct Vertex {
+    Vector3f position;
+    Vector3f color;
+
+    static VertexInputDescription getVertexInputDescription();
+};
+
+struct Mesh {
+    AllocatedBuffer vertexBuffer;
+    std::vector<Vertex> vertices;
+};
+
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
-    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain);
+    GraphicsPipeline(
+        const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo = std::nullopt);
 
     void bind(const CommandBuffer &commandBuffer) const;
+    void loadMeshes();
+
+    [[nodiscard]] const Mesh &getMesh() const { return mesh; }
+    [[nodiscard]] Mesh &getMesh() { return mesh; }
 
   private:
     VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;
     VkPipelineColorBlendStateCreateInfo createColorBlendState() const;
 
-    static VkPipelineLayoutCreateInfo createPipelineLayout();
+    VkGraphicsPipelineCreateInfo createGraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain);
+    VkPipelineLayoutCreateInfo createPipelineLayout();
 
   private:
     const Device &device;
+
+    Mesh mesh;
 
     VkPipeline graphics_pipeline = nullptr;
     VkPipelineLayout pipeline_layout = nullptr;

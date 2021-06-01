@@ -4,7 +4,7 @@
 
 #include "renderer/Device.hpp"
 
-CommandPool::CommandPool(const Device &device, QueueFamilyType type) : device(device) {
+CommandPool::CommandPool(const Device &device, QueueFamilyType type) {
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 

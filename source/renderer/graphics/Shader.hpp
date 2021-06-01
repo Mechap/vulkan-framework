@@ -18,7 +18,7 @@ class ShaderModule : public NoCopy, public NoMove {
   public:
     ShaderModule(const Device &device, const std::string_view filename, ShaderType shaderType);
 
-    [[nodiscard]] ShaderType getType() const { return shader_type; }
+    [[nodiscard]] constexpr ShaderType getType() const { return shader_type; }
     [[nodiscard]] const VkShaderModule &getShaderModule() const { return shader_module; }
 
   private:
@@ -28,6 +28,6 @@ class ShaderModule : public NoCopy, public NoMove {
     const Device &device;
 
     VkShaderModule shader_module = nullptr;
-    ShaderType shader_type;
+	ShaderType shader_type;
 };
 

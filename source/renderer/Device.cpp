@@ -8,20 +8,25 @@
 
 #include "config.hpp"
 #include "renderer/Instance.hpp"
+#include "renderer/graphics/GraphicsPipeline.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 #include "renderer/sync/Fence.hpp"
 #include "renderer/sync/Semaphore.hpp"
 
-Device::Device(const Instance &instance) : window_surface(instance.getSurface()) {
+Device::Device(const Instance &instance) : instance(instance), window_surface(instance.getSurface()) {
     physical_device = pickPhysicalDevices(instance);
 
     vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
     vkGetPhysicalDeviceFeatures(physical_device, &physical_device_features);
 
     device = createLogicalDevice();
+    allocator = createAllocator();
 }
 
-Device::~Device() { vkDestroyDevice(device, nullptr); }
+Device::~Device() {
+    vmaDestroyAllocator(allocator);
+    vkDestroyDevice(device, nullptr);
+}
 
 VkDevice Device::createLogicalDevice() {
     auto indices = findQueueFamilies(physical_device);
@@ -66,6 +71,20 @@ VkDevice Device::createLogicalDevice() {
     return vk_device;
 }
 
+VmaAllocator Device::createAllocator() {
+    VmaAllocatorCreateInfo allocatorInfo{};
+    allocatorInfo.physicalDevice = physical_device;
+    allocatorInfo.device = device;
+    allocatorInfo.instance = instance.getInstance();
+
+    VmaAllocator vma_allocator = nullptr;
+    if (vmaCreateAllocator(&allocatorInfo, &vma_allocator) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create VMA allocator!");
+    }
+
+    return vma_allocator;
+}
+
 QueueFanmilyIndices Device::findQueueFamilies(VkPhysicalDevice physicalDevice) const {
     QueueFanmilyIndices indices;
 
@@ -94,6 +113,44 @@ QueueFanmilyIndices Device::findQueueFamilies(VkPhysicalDevice physicalDevice) c
     }
 
     return indices;
+}
+
+void Device::upload_buffer(Mesh &mesh, BufferType type) {
+    VkBufferCreateInfo bufferInfo{};
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+
+    bufferInfo.size = mesh.vertices.size() * sizeof(Vertex);
+
+    switch (type) {
+        case BufferType::VERTEX_BUFFER:
+            bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+            break;
+
+        case BufferType::INDEX_BUFFER:
+            bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+            break;
+
+        default:
+            throw std::runtime_error("unknow buffer usage!");
+    }
+
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+
+    if (vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &mesh.vertexBuffer.buffer, &mesh.vertexBuffer.allocation, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate vertex buffer!");
+    } else {
+        DeletionQueue::push_function([_allocator = allocator, _buffer = mesh.vertexBuffer.buffer, _allocation = mesh.vertexBuffer.allocation]() {
+            vmaDestroyBuffer(_allocator, _buffer, _allocation);
+        });
+    }
+
+    void *data;
+    vmaMapMemory(allocator, mesh.vertexBuffer.allocation, &data);
+
+    std::memcpy(data, mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex));
+
+    vmaUnmapMemory(allocator, mesh.vertexBuffer.allocation);
 }
 
 VkPhysicalDevice Device::pickPhysicalDevices(const Instance &instance) {

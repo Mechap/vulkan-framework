@@ -1,5 +1,6 @@
 #include "renderer/graphics/GraphicsPipeline.hpp"
 
+#include <optional>
 #include <stdexcept>
 
 #include "config.hpp"
@@ -8,6 +9,37 @@
 #include "renderer/graphics/RenderPass.hpp"
 #include "renderer/graphics/Shader.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
+
+VertexInputDescription Vertex::getVertexInputDescription() {
+    VertexInputDescription description;
+
+    VkVertexInputBindingDescription mainBinding{};
+    mainBinding.binding = 0;
+    mainBinding.stride = sizeof(Vertex);
+    mainBinding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    description.bindings.push_back(mainBinding);
+
+    // position attribute
+    VkVertexInputAttributeDescription positionAttribute{};
+    positionAttribute.binding = 0;
+    positionAttribute.location = 0;
+    positionAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+    positionAttribute.offset = offsetof(Vertex, position);
+
+    description.attributes.push_back(positionAttribute);
+
+    // color attribute
+    VkVertexInputAttributeDescription colorAttribute{};
+    colorAttribute.binding = 0;
+    colorAttribute.location = 1;
+    colorAttribute.format = VK_FORMAT_R32G32B32_SFLOAT;
+    colorAttribute.offset = offsetof(Vertex, color);
+
+    description.attributes.push_back(colorAttribute);
+
+    return description;
+}
 
 namespace {
     VkPipelineShaderStageCreateInfo createShaderStage(ShaderModule &&shader) {
@@ -33,14 +65,23 @@ namespace {
         return info;
     }
 
-    VkPipelineVertexInputStateCreateInfo createVertexInputState() {
+    VkPipelineVertexInputStateCreateInfo createVertexInputState(const std::optional<VertexInputDescription> &inputInfo) {
         VkPipelineVertexInputStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        info.vertexAttributeDescriptionCount = 0;
-        info.pVertexAttributeDescriptions = nullptr;
-        info.vertexAttributeDescriptionCount = 0;
-        info.pVertexBindingDescriptions = nullptr;
+        if (inputInfo.has_value()) {
+            info.vertexAttributeDescriptionCount = inputInfo.value().attributes.size();
+            info.pVertexAttributeDescriptions = inputInfo.value().attributes.data();
+
+            info.vertexBindingDescriptionCount = inputInfo.value().bindings.size();
+            info.pVertexBindingDescriptions = inputInfo.value().bindings.data();
+        } else {
+            info.vertexAttributeDescriptionCount = 0;
+            info.pVertexAttributeDescriptions = nullptr;
+
+            info.vertexBindingDescriptionCount = 0;
+            info.pVertexBindingDescriptions = nullptr;
+        }
 
         return info;
     }
@@ -99,7 +140,9 @@ namespace {
     }
 }  // namespace
 
-GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain) : device(device) {
+GraphicsPipeline::GraphicsPipeline(
+    const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo)
+    : device(device) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -131,7 +174,7 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
     }
 
     // vertex input and input assembly
-    vertex_input_info = createVertexInputState();
+    vertex_input_info = createVertexInputState(inputInfo);
     input_assembly = createInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
     rasterizer = createRasterizationState(VK_POLYGON_MODE_FILL);
     multisampling = createMultisampleState();
@@ -140,21 +183,21 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
     VkGraphicsPipelineCreateInfo graphicsPipelineInfo{};
     graphicsPipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
-	graphicsPipelineInfo.stageCount = shader_stages.size();
-	graphicsPipelineInfo.pStages = shader_stages.data();
-	graphicsPipelineInfo.pVertexInputState = &vertex_input_info;
-	graphicsPipelineInfo.pInputAssemblyState = &input_assembly;
-	graphicsPipelineInfo.pViewportState = &viewportInfo;
-	graphicsPipelineInfo.pRasterizationState = &rasterizer;
-	graphicsPipelineInfo.pMultisampleState = &multisampling;
-	graphicsPipelineInfo.pDepthStencilState = nullptr;
-	graphicsPipelineInfo.pColorBlendState = &colorBlendInfo;
-	graphicsPipelineInfo.pDynamicState = nullptr;
-	graphicsPipelineInfo.layout = pipeline_layout;
-	graphicsPipelineInfo.renderPass = renderpass.getPass();
-	graphicsPipelineInfo.subpass = 0;
-	graphicsPipelineInfo.basePipelineHandle = nullptr;
-	graphicsPipelineInfo.basePipelineIndex = -1;
+    graphicsPipelineInfo.stageCount = shader_stages.size();
+    graphicsPipelineInfo.pStages = shader_stages.data();
+    graphicsPipelineInfo.pVertexInputState = &vertex_input_info;
+    graphicsPipelineInfo.pInputAssemblyState = &input_assembly;
+    graphicsPipelineInfo.pViewportState = &viewportInfo;
+    graphicsPipelineInfo.pRasterizationState = &rasterizer;
+    graphicsPipelineInfo.pMultisampleState = &multisampling;
+    graphicsPipelineInfo.pDepthStencilState = nullptr;
+    graphicsPipelineInfo.pColorBlendState = &colorBlendInfo;
+    graphicsPipelineInfo.pDynamicState = nullptr;
+    graphicsPipelineInfo.layout = pipeline_layout;
+    graphicsPipelineInfo.renderPass = renderpass.getPass();
+    graphicsPipelineInfo.subpass = 0;
+    graphicsPipelineInfo.basePipelineHandle = nullptr;
+    graphicsPipelineInfo.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(device.getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
@@ -162,6 +205,20 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
         DeletionQueue::push_function([dev = device.getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
         DeletionQueue::push_function([dev = device.getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
     }
+}
+
+void GraphicsPipeline::loadMeshes() {
+    mesh.vertices.resize(3);
+
+    // vertex positions
+    mesh.vertices[0].position = {1.f, 1.f, 0.0f};
+    mesh.vertices[1].position = {-1.f, 1.f, 0.0f};
+    mesh.vertices[2].position = {0.f, -1.f, 0.0f};
+
+    // vertex colors
+    mesh.vertices[0].color = {0.f, 1.f, 0.0f};
+    mesh.vertices[1].color = {0.f, 1.f, 0.0f};
+    mesh.vertices[2].color = {0.f, 1.f, 0.0f};
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {

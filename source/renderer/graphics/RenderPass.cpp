@@ -38,7 +38,6 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain) : devic
     subpasses.push_back(subpass);
 
     // subpass dependency
-	/*
     VkSubpassDependency dependency{};
 
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -47,7 +46,6 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain) : devic
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	*/
 
     // renderpass
     VkRenderPassCreateInfo renderPassInfo{};
@@ -58,10 +56,8 @@ RenderPass::RenderPass(const Device &device, const Swapchain &swapchain) : devic
     renderPassInfo.subpassCount = subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
 
-	/*
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
-	*/
 
     if (vkCreateRenderPass(device.getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");

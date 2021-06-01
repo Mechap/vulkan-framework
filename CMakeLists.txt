@@ -27,6 +27,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(sources 
+	${SOURCE_DIR}/vendor/vk_mem_alloc.cpp
+
 	${SOURCE_DIR}/main.cpp
 
 	${SOURCE_DIR}/window.cpp
@@ -55,7 +57,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt spdlog::spdlog)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-nullability-extension -Wno-nullability-completeness -Wno-gnu-zero-variadic-macro-arguments -Wno-missing-field-initializers -Wno-unused-parameter>
 )
 
 # Vulkan

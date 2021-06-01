@@ -16,7 +16,5 @@ class CommandPool : public NoCopy, public NoMove {
     const VkCommandPool &getPool() const { return command_pool; }
 
   private:
-    const Device &device;
-
     VkCommandPool command_pool = nullptr;
 };

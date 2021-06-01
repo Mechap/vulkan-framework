@@ -5,6 +5,8 @@
 #include <exception>
 
 #include "config.hpp"
+#include "math/Vector2.hpp"
+#include "math/Vector3.hpp"
 #include "renderer/Device.hpp"
 #include "renderer/Instance.hpp"
 #include "renderer/Swapchain.hpp"
@@ -31,7 +33,11 @@ int main() {
         auto commandBuffer = CommandBuffer(device, commandPool);
 
         auto renderPass = RenderPass(device, swapchain);
-        auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain);
+
+        auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain, Vertex::getVertexInputDescription());
+		graphicsPipeline.loadMeshes();
+
+		device.upload_buffer(graphicsPipeline.getMesh(), BufferType::VERTEX_BUFFER);
 
         auto renderFence = Fence(device);
 
@@ -58,14 +64,16 @@ int main() {
             commandBuffer.begin();
 
             VkClearValue clearValue;
-            float flash = std::abs(std::sin(frameNumber / 120.f));
-            clearValue.color = {{flash, 0.f, 0.f, 1.0f}};
+            clearValue.color = {{0.f, 0.f, 0.f, 1.0f}};
 
             renderPass.begin(commandBuffer, framebuffers[swapchainImageIndex], clearValue);
 
             graphicsPipeline.bind(commandBuffer);
 
-            vkCmdDraw(commandBuffer.getCommandBuffer(), 3, 1, 0, 0);
+			VkDeviceSize offset = 0;
+			vkCmdBindVertexBuffers(commandBuffer.getCommandBuffer(), 0, 1, &graphicsPipeline.getMesh().vertexBuffer.buffer, &offset);
+
+            vkCmdDraw(commandBuffer.getCommandBuffer(), graphicsPipeline.getMesh().vertices.size(), 1, 0, 0);
 
             renderPass.end(commandBuffer);
             commandBuffer.end();
