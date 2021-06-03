@@ -3,11 +3,10 @@
 #include <vulkan/vulkan_core.h>
 
 #include <array>
+#include <glm/vec3.hpp>
 #include <span>
 #include <vector>
 
-#include "math/Vector2.hpp"
-#include "math/Vector3.hpp"
 #include "renderer/Device.hpp"
 #include "utility.hpp"
 
@@ -25,8 +24,8 @@ struct VertexInputDescription {
 };
 
 struct Vertex {
-    Vector3f position;
-    Vector3f color;
+    glm::vec3 position;
+    glm::vec3 color;
 
     static VertexInputDescription getVertexInputDescription();
 };
@@ -38,8 +37,7 @@ struct Mesh {
 
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
-    GraphicsPipeline(
-        const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo = std::nullopt);
+    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo = std::nullopt);
 
     void bind(const CommandBuffer &commandBuffer) const;
     void loadMeshes();

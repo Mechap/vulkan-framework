@@ -5,8 +5,6 @@
 #include <exception>
 
 #include "config.hpp"
-#include "math/Vector2.hpp"
-#include "math/Vector3.hpp"
 #include "renderer/Device.hpp"
 #include "renderer/Instance.hpp"
 #include "renderer/Swapchain.hpp"
@@ -19,30 +17,42 @@
 #include "renderer/sync/Semaphore.hpp"
 #include "window.hpp"
 
+struct FrameData {
+    FrameData(const Device &device)
+        : presentSemaphore(device), renderSemaphore(device), renderFence(device), commandPool(device, QueueFamilyType::GRAPHICS), commandBuffer(device, commandPool) {}
+
+    Semaphore presentSemaphore, renderSemaphore;
+    Fence renderFence;
+
+    CommandPool commandPool;
+    CommandBuffer commandBuffer;
+};
+
+namespace {
+    constexpr std::uint32_t FRAME_OVERLAP = 2;
+
+    FrameData &getCurrentFrame(std::span<FrameData> frames, std::uint32_t frameNumber) {
+        if (frameNumber > 1 || frameNumber < 0) {
+            throw std::runtime_error("frameNumber is out of bounds!");
+        }
+        return frames[frameNumber % FRAME_OVERLAP];
+    }
+}  // namespace
+
 int main() {
     try {
-        constexpr Vector2<uint32_t> window_size = {800, 600};
-
-        auto window = Window(WindowSpec("application", window_size));
+        auto window = Window(WindowSpec("application", config::window_size));
         auto instance = Instance(window, "application");
 
         auto device = Device(instance);
         auto swapchain = Swapchain(device, instance, window);
 
-        auto commandPool = CommandPool(device, QueueFamilyType::GRAPHICS);
-        auto commandBuffer = CommandBuffer(device, commandPool);
-
         auto renderPass = RenderPass(device, swapchain);
 
         auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain, Vertex::getVertexInputDescription());
-		graphicsPipeline.loadMeshes();
+        graphicsPipeline.loadMeshes();
 
-		device.upload_buffer(graphicsPipeline.getMesh(), BufferType::VERTEX_BUFFER);
-
-        auto renderFence = Fence(device);
-
-        auto presentSemaphore = Semaphore(device);
-        auto renderSemaphore = Semaphore(device);
+        device.upload_buffer(graphicsPipeline.getMesh(), BufferType::VERTEX_BUFFER);
 
         std::vector<Framebuffer> framebuffers;
 
@@ -50,33 +60,35 @@ int main() {
             framebuffers.emplace_back(device, swapchain.getImageViews()[i], renderPass, swapchain);
         }
 
+        std::array<FrameData, 2> frames = {FrameData(device), FrameData(device)};
+
         uint32_t frameNumber = 0;
 
         while (!window.shouldClose()) {
             window.updateEvents();
 
-            renderFence.wait(std::numeric_limits<std::uint64_t>::max());
-            renderFence.reset();
+            getCurrentFrame(frames, frameNumber).renderFence.wait(std::numeric_limits<std::uint64_t>::max());
+            getCurrentFrame(frames, frameNumber).renderFence.reset();
 
-            auto swapchainImageIndex = swapchain.acquireNextImage(presentSemaphore);
+            auto swapchainImageIndex = swapchain.acquireNextImage(getCurrentFrame(frames, frameNumber).presentSemaphore);
 
-            commandBuffer.reset();
-            commandBuffer.begin();
+            getCurrentFrame(frames, frameNumber).commandBuffer.reset();
+            getCurrentFrame(frames, frameNumber).commandBuffer.begin();
 
             VkClearValue clearValue;
             clearValue.color = {{0.f, 0.f, 0.f, 1.0f}};
 
-            renderPass.begin(commandBuffer, framebuffers[swapchainImageIndex], clearValue);
+            renderPass.begin(getCurrentFrame(frames, frameNumber).commandBuffer, framebuffers[swapchainImageIndex], clearValue);
 
-            graphicsPipeline.bind(commandBuffer);
+            graphicsPipeline.bind(getCurrentFrame(frames, frameNumber).commandBuffer);
 
-			VkDeviceSize offset = 0;
-			vkCmdBindVertexBuffers(commandBuffer.getCommandBuffer(), 0, 1, &graphicsPipeline.getMesh().vertexBuffer.buffer, &offset);
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(getCurrentFrame(frames, frameNumber).commandBuffer.getCommandBuffer(), 0, 1, &graphicsPipeline.getMesh().vertexBuffer.buffer, &offset);
 
-            vkCmdDraw(commandBuffer.getCommandBuffer(), graphicsPipeline.getMesh().vertices.size(), 1, 0, 0);
+            vkCmdDraw(getCurrentFrame(frames, frameNumber).commandBuffer.getCommandBuffer(), graphicsPipeline.getMesh().vertices.size(), 1, 0, 0);
 
-            renderPass.end(commandBuffer);
-            commandBuffer.end();
+            renderPass.end(getCurrentFrame(frames, frameNumber).commandBuffer);
+            getCurrentFrame(frames, frameNumber).commandBuffer.end();
 
             VkSubmitInfo submit{};
             submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -85,15 +97,15 @@ int main() {
             submit.pWaitDstStageMask = &waitStages;
 
             submit.waitSemaphoreCount = 1;
-            submit.pWaitSemaphores = &presentSemaphore.getSemaphore();
+            submit.pWaitSemaphores = &getCurrentFrame(frames, frameNumber).presentSemaphore.getSemaphore();
 
             submit.signalSemaphoreCount = 1;
-            submit.pSignalSemaphores = &renderSemaphore.getSemaphore();
+            submit.pSignalSemaphores = &getCurrentFrame(frames, frameNumber).renderSemaphore.getSemaphore();
 
             submit.commandBufferCount = 1;
-            submit.pCommandBuffers = &commandBuffer.getCommandBuffer();
+            submit.pCommandBuffers = &getCurrentFrame(frames, frameNumber).commandBuffer.getCommandBuffer();
 
-            vkQueueSubmit(device.getQueue<QueueFamilyType::GRAPHICS>(), 1, &submit, renderFence.getFence());
+            vkQueueSubmit(device.getQueue<QueueFamilyType::GRAPHICS>(), 1, &submit, getCurrentFrame(frames, frameNumber).renderFence.getFence());
 
             VkPresentInfoKHR presentInfo{};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -102,15 +114,22 @@ int main() {
             presentInfo.pSwapchains = &swapchain.getSwapchain();
 
             presentInfo.waitSemaphoreCount = 1;
-            presentInfo.pWaitSemaphores = &renderSemaphore.getSemaphore();
+            presentInfo.pWaitSemaphores = &getCurrentFrame(frames, frameNumber).renderSemaphore.getSemaphore();
 
             presentInfo.pImageIndices = &swapchainImageIndex;
             vkQueuePresentKHR(device.getQueue<QueueFamilyType::PRESENT>(), &presentInfo);
 
-            frameNumber++;
+            fmt::print("{}\n", frameNumber);
+
+            if (frameNumber < 1) {
+                frameNumber++;
+            } else {
+                frameNumber = 0;
+            }
         }
 
-        renderFence.wait(std::numeric_limits<std::uint64_t>::max());
+        getCurrentFrame(frames, 0).renderFence.wait(std::numeric_limits<std::uint64_t>::max());
+        getCurrentFrame(frames, 1).renderFence.wait(std::numeric_limits<std::uint64_t>::max());
 
         DeletionQueue::flush();
     } catch (const std::exception &e) {

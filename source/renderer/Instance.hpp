@@ -15,8 +15,8 @@ class Instance final : public NoCopy, public NoMove {
     Instance(const Window &window, std::string_view app_name , uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
     ~Instance();
 
-    [[nodiscard]] const VkInstance &getInstance() const { return instance; }
-    [[nodiscard]] const VkSurfaceKHR &getSurface() const { return window_surface; }
+    [[nodiscard]] VkInstance getInstance() const { return instance; }
+    [[nodiscard]] VkSurfaceKHR getSurface() const { return window_surface; }
 
   private:
     VkInstance createInstance(

@@ -1,6 +1,5 @@
 #include "renderer/graphics/GraphicsPipeline.hpp"
 
-#include <optional>
 #include <stdexcept>
 
 #include "config.hpp"
@@ -70,11 +69,11 @@ namespace {
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
         if (inputInfo.has_value()) {
-            info.vertexAttributeDescriptionCount = inputInfo.value().attributes.size();
-            info.pVertexAttributeDescriptions = inputInfo.value().attributes.data();
+            info.vertexAttributeDescriptionCount = inputInfo->attributes.size();
+            info.pVertexAttributeDescriptions = inputInfo->attributes.data();
 
-            info.vertexBindingDescriptionCount = inputInfo.value().bindings.size();
-            info.pVertexBindingDescriptions = inputInfo.value().bindings.data();
+            info.vertexBindingDescriptionCount = inputInfo->bindings.size();
+            info.pVertexBindingDescriptions = inputInfo->bindings.data();
         } else {
             info.vertexAttributeDescriptionCount = 0;
             info.pVertexAttributeDescriptions = nullptr;
@@ -140,8 +139,7 @@ namespace {
     }
 }  // namespace
 
-GraphicsPipeline::GraphicsPipeline(
-    const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo)
+GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo)
     : device(device) {
     VkViewport viewport{};
     viewport.x = 0.0f;
@@ -211,14 +209,14 @@ void GraphicsPipeline::loadMeshes() {
     mesh.vertices.resize(3);
 
     // vertex positions
-    mesh.vertices[0].position = {1.f, 1.f, 0.0f};
-    mesh.vertices[1].position = {-1.f, 1.f, 0.0f};
-    mesh.vertices[2].position = {0.f, -1.f, 0.0f};
+    mesh.vertices[0].position = {0.5f, 0.5f, 0.0f};
+    mesh.vertices[1].position = {-0.5f, 0.5f, 0.0f};
+    mesh.vertices[2].position = {0.f, -0.5f, 0.0f};
 
     // vertex colors
-    mesh.vertices[0].color = {0.f, 1.f, 0.0f};
+    mesh.vertices[0].color = {1.f, 0.f, 0.0f};
     mesh.vertices[1].color = {0.f, 1.f, 0.0f};
-    mesh.vertices[2].color = {0.f, 1.f, 0.0f};
+    mesh.vertices[2].color = {0.f, 0.f, 1.0f};
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {

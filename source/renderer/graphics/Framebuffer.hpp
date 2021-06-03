@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "math/Vector2.hpp"
+#include <functional>
 
 class Device;
 class Swapchain;
@@ -13,12 +13,12 @@ class Framebuffer {
   public:
     Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Swapchain &extent);
 
-	Framebuffer(Framebuffer &&other) noexcept;
-	Framebuffer &operator=(Framebuffer &&other) noexcept;
+    Framebuffer(Framebuffer &&other) noexcept;
+    Framebuffer &operator=(Framebuffer &&other) noexcept;
 
     const VkFramebuffer &getFramebuffer() const { return framebuffer; }
 
   private:
-	std::reference_wrapper<const Device> device;
+    std::reference_wrapper<const Device> device;
     VkFramebuffer framebuffer = nullptr;
 };

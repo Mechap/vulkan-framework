@@ -2,12 +2,11 @@
 
 #include <GLFW/glfw3.h>
 
+#include <glm/vec2.hpp>
 #include <string_view>
 
-#include "math/Vector2.hpp"
-
 struct WindowSpec {
-    WindowSpec(const std::string_view app_name, const Vector2<uint32_t> &window_size) : app_name(app_name), window_width(window_size.x), window_height(window_size.y) {}
+    WindowSpec(const std::string_view app_name, const glm::vec2 &window_size) : app_name(app_name), window_width(window_size.x), window_height(window_size.y) {}
 
     std::string app_name;
 

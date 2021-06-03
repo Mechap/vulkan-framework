@@ -4,10 +4,10 @@
 
 #include <string_view>
 #include <vector>
-
-#include "math/Vector2.hpp"
+#include <glm/vec2.hpp>
 
 namespace config {
+	static constexpr glm::vec2 window_size = {800, 600};
     static constexpr bool enable_validation_layers = true;
 
     static constexpr std::string_view engine_name = "mechap engine";

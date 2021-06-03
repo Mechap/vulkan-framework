@@ -73,5 +73,8 @@ endif()
 include(${CMAKE_DIR}/LinkGLFW.cmake)
 LinkGLFW(${PROJECT_NAME} PRIVATE)
 
+include(${CMAKE_DIR}/LinkGLM.cmake)
+LinkGLM(${PROJECT_NAME} PRIVATE)
+
 # Enable C++20
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
