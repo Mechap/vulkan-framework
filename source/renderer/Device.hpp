@@ -10,15 +10,21 @@
 class Instance;
 
 struct Mesh;
+struct Vertex;
 
 struct QueueFanmilyIndices final {
     std::optional<uint32_t> graphics_family;
     std::optional<uint32_t> present_family;
+    std::optional<uint32_t> transfer_family;
 
-    constexpr bool isComplete() { return graphics_family.has_value() && present_family.has_value(); }
+    constexpr bool isComplete() { return graphics_family.has_value() && present_family.has_value() && transfer_family.has_value(); }
 };
 
-enum class QueueFamilyType { GRAPHICS, PRESENT };
+enum class QueueFamilyType {
+    GRAPHICS,
+    PRESENT,
+    TRANSFER,
+};
 
 enum class BufferType {
     VERTEX_BUFFER,
@@ -47,6 +53,9 @@ class Device final : public NoCopy, public NoMove {
             case QueueFamilyType::PRESENT:
                 return present_queue;
 
+            case QueueFamilyType::TRANSFER:
+                return transfer_queue;
+
             default:
                 break;
         }
@@ -54,7 +63,26 @@ class Device final : public NoCopy, public NoMove {
 
     QueueFanmilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice) const;
 
-    void upload_buffer(Mesh &mesh, BufferType type);
+    AllocatedBuffer createBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage) const;
+    void copyBuffer(AllocatedBuffer &srcBuffer, AllocatedBuffer &dstBuffer, VkDeviceSize bufferSize) const;
+
+    void createVertexBuffer(Mesh &mesh) const;
+
+    template <BufferType type>
+    void upload_buffer(Mesh &mesh) {
+        switch (type) {
+            case BufferType::VERTEX_BUFFER:
+                createVertexBuffer(mesh);
+                break;
+
+			// TODO: implement index buffers
+            case BufferType::INDEX_BUFFER:
+				break;
+
+            default:
+                break;
+        }
+    }
 
   private:
     VkDevice createLogicalDevice();
@@ -78,6 +106,7 @@ class Device final : public NoCopy, public NoMove {
 
     VkQueue graphics_queue;
     VkQueue present_queue;
+    VkQueue transfer_queue;
 
     const VkSurfaceKHR window_surface;
 };

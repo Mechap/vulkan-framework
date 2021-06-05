@@ -49,10 +49,11 @@ int main() {
 
         auto renderPass = RenderPass(device, swapchain);
 
-        auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain, Vertex::getVertexInputDescription());
+		auto vertexInputDescription = Vertex::getVertexInputDescription();
+        auto graphicsPipeline = GraphicsPipeline(device, renderPass, swapchain, &vertexInputDescription);
         graphicsPipeline.loadMeshes();
 
-        device.upload_buffer(graphicsPipeline.getMesh(), BufferType::VERTEX_BUFFER);
+        device.upload_buffer<BufferType::VERTEX_BUFFER>(graphicsPipeline.getMesh());
 
         std::vector<Framebuffer> framebuffers;
 
@@ -60,7 +61,7 @@ int main() {
             framebuffers.emplace_back(device, swapchain.getImageViews()[i], renderPass, swapchain);
         }
 
-        std::array<FrameData, 2> frames = {FrameData(device), FrameData(device)};
+        std::array<FrameData, FRAME_OVERLAP> frames = {FrameData(device), FrameData(device)};
 
         uint32_t frameNumber = 0;
 
@@ -119,7 +120,7 @@ int main() {
             presentInfo.pImageIndices = &swapchainImageIndex;
             vkQueuePresentKHR(device.getQueue<QueueFamilyType::PRESENT>(), &presentInfo);
 
-            fmt::print("{}\n", frameNumber);
+            // fmt::print("{}\n", frameNumber);
 
             if (frameNumber < 1) {
                 frameNumber++;

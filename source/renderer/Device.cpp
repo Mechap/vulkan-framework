@@ -67,6 +67,7 @@ VkDevice Device::createLogicalDevice() {
 
     vkGetDeviceQueue(vk_device, indices.graphics_family.value(), 0, &graphics_queue);
     vkGetDeviceQueue(vk_device, indices.present_family.value(), 0, &present_queue);
+    vkGetDeviceQueue(vk_device, indices.transfer_family.value(), 0, &transfer_queue);
 
     return vk_device;
 }
@@ -99,6 +100,9 @@ QueueFanmilyIndices Device::findQueueFamilies(VkPhysicalDevice physicalDevice) c
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphics_family = i;
         }
+        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            indices.transfer_family = i;
+        }
 
         VkBool32 presentSupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, window_surface, &presentSupport);
@@ -115,42 +119,64 @@ QueueFanmilyIndices Device::findQueueFamilies(VkPhysicalDevice physicalDevice) c
     return indices;
 }
 
-void Device::upload_buffer(Mesh &mesh, BufferType type) {
+AllocatedBuffer Device::createBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage) const {
+    AllocatedBuffer buffer{};
+
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 
-    bufferInfo.size = mesh.vertices.size() * sizeof(Vertex);
-
-    switch (type) {
-        case BufferType::VERTEX_BUFFER:
-            bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            break;
-
-        case BufferType::INDEX_BUFFER:
-            bufferInfo.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            break;
-
-        default:
-            throw std::runtime_error("unknow buffer usage!");
-    }
+    bufferInfo.size = bufferSize;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.usage = bufferUsage;
 
     VmaAllocationCreateInfo allocInfo{};
-    allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+    allocInfo.usage = memoryUsage;
 
-    if (vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &mesh.vertexBuffer.buffer, &mesh.vertexBuffer.allocation, nullptr) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate vertex buffer!");
+    if (vmaCreateBuffer(allocator, &bufferInfo, &allocInfo, &buffer.buffer, &buffer.allocation, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("failed to allocate buffer!");
     } else {
-        DeletionQueue::push_function([_allocator = allocator, _buffer = mesh.vertexBuffer.buffer, _allocation = mesh.vertexBuffer.allocation]() {
-            vmaDestroyBuffer(_allocator, _buffer, _allocation);
-        });
+        DeletionQueue::push_function([=]() { vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation); });
     }
 
+    return buffer;
+}
+
+void Device::createVertexBuffer(Mesh &mesh) const {
+	const VkDeviceSize bufferSize = sizeof(Vertex) * mesh.vertices.size();
+    auto stagingBuffer = createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_COPY);
+
     void *data;
-    vmaMapMemory(allocator, mesh.vertexBuffer.allocation, &data);
+    vmaMapMemory(allocator, stagingBuffer.allocation, &data);
+    std::memcpy(data, mesh.vertices.data(), bufferSize);
+    vmaUnmapMemory(allocator, stagingBuffer.allocation);
 
-    std::memcpy(data, mesh.vertices.data(), mesh.vertices.size() * sizeof(Vertex));
+    mesh.vertexBuffer = createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
+    copyBuffer(stagingBuffer, mesh.vertexBuffer, bufferSize);
+}
 
-    vmaUnmapMemory(allocator, mesh.vertexBuffer.allocation);
+void Device::copyBuffer(AllocatedBuffer &srcBuffer, AllocatedBuffer &dstBuffer, VkDeviceSize bufferSize) const {
+    const auto commandPool = CommandPool(*this, QueueFamilyType::GRAPHICS);
+    const auto cmd = CommandBuffer(*this, commandPool);
+
+    cmd.begin();
+
+    VkBufferCopy copy;
+    copy.dstOffset = 0;
+    copy.srcOffset = 0;
+    copy.size = bufferSize;
+
+    vkCmdCopyBuffer(cmd.getCommandBuffer(), srcBuffer.buffer, dstBuffer.buffer, 1, &copy);
+
+    cmd.end();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cmd.getCommandBuffer();
+
+    vkQueueSubmit(graphics_queue, 1, &submitInfo, nullptr);
+    vkQueueWaitIdle(graphics_queue);
 }
 
 VkPhysicalDevice Device::pickPhysicalDevices(const Instance &instance) {

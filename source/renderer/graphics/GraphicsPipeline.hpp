@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "renderer/Device.hpp"
+#include "renderer/sync/CommandPool.hpp"
+#include "renderer/sync/Fence.hpp"
 #include "utility.hpp"
 
 class Device;
@@ -37,7 +39,7 @@ struct Mesh {
 
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
-    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo = std::nullopt);
+    GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const VertexInputDescription *inputInfo = nullptr);
 
     void bind(const CommandBuffer &commandBuffer) const;
     void loadMeshes();

@@ -64,11 +64,11 @@ namespace {
         return info;
     }
 
-    VkPipelineVertexInputStateCreateInfo createVertexInputState(const std::optional<VertexInputDescription> &inputInfo) {
+    VkPipelineVertexInputStateCreateInfo createVertexInputState(const VertexInputDescription *inputInfo) {
         VkPipelineVertexInputStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        if (inputInfo.has_value()) {
+        if (inputInfo != nullptr) {
             info.vertexAttributeDescriptionCount = inputInfo->attributes.size();
             info.pVertexAttributeDescriptions = inputInfo->attributes.data();
 
@@ -139,7 +139,7 @@ namespace {
     }
 }  // namespace
 
-GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const std::optional<VertexInputDescription> &inputInfo)
+GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const VertexInputDescription *inputInfo)
     : device(device) {
     VkViewport viewport{};
     viewport.x = 0.0f;

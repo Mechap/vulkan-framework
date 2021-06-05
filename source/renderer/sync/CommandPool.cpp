@@ -4,7 +4,7 @@
 
 #include "renderer/Device.hpp"
 
-CommandPool::CommandPool(const Device &device, QueueFamilyType type) {
+CommandPool::CommandPool(const Device &device, QueueFamilyType type) : device(device) {
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 
@@ -29,3 +29,5 @@ CommandPool::CommandPool(const Device &device, QueueFamilyType type) {
         DeletionQueue::push_function([dev = device.getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
     }
 }
+
+void CommandPool::reset(VkCommandPoolResetFlags flags) const { vkResetCommandPool(device.getDevice(), command_pool, flags); }
