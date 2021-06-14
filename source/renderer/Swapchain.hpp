@@ -23,7 +23,7 @@ struct SwapchainProperties {
 
 class Swapchain final : public NoCopy, public NoMove {
   public:
-    Swapchain(const Device &device, const Instance &instance, const Window &window);
+    Swapchain(std::shared_ptr<Instance> _instance, std::shared_ptr<Device> _device, const Window &window);
 
     [[nodiscard]] const VkSwapchainKHR &getSwapchain() const { return swapchain; }
     [[nodiscard]] const VkFormat &getFormat() const { return swapchain_image_format; }
@@ -32,18 +32,17 @@ class Swapchain final : public NoCopy, public NoMove {
     [[nodiscard]] std::size_t getImageViewCount() const { return image_views.size(); }
     [[nodiscard]] std::span<const VkImageView> getImageViews() const { return image_views; }
 
-    uint32_t acquireNextImage(const Semaphore &presentSemaphore) const;
+    [[nodiscard]] uint32_t acquireNextImage(const Semaphore &presentSemaphore) const;
 
   private:
-    VkSwapchainKHR create(GLFWwindow *window);
+    void create(GLFWwindow *window);
     void createViews();
 
   private:
     VkSwapchainKHR swapchain = nullptr;
 
-    const VkSurfaceKHR surface;
-
-	const Device &device;
+    std::shared_ptr<Instance> instance;
+	std::shared_ptr<Device> device;
 
     SwapchainProperties properties;
     VkFormat swapchain_image_format;

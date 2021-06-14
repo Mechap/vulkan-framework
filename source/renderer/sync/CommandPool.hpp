@@ -11,12 +11,12 @@ class Swapchain;
 
 class CommandPool : public NoCopy, public NoMove {
   public:
-    CommandPool(const Device &device, QueueFamilyType type);
+    CommandPool(std::shared_ptr<Device> _device, QueueFamilyType type);
 
     void reset(VkCommandPoolResetFlags flags = 0) const;
     [[nodiscard]] VkCommandPool getPool() const { return command_pool; }
 
   private:
-    const Device &device;
+  	std::shared_ptr<Device> device;
     VkCommandPool command_pool = nullptr;
 };

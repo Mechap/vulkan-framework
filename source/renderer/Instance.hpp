@@ -5,6 +5,7 @@
 
 #include <string_view>
 #include <vector>
+#include <cassert>
 
 #include "utility.hpp"
 
@@ -23,13 +24,13 @@ class Instance final : public NoCopy, public NoMove {
         std::string_view app_name, std::string_view engine_name, uint32_t app_version, uint32_t engine_version, std::vector<const char *> &&required_extensions);
 
     VkDebugUtilsMessengerEXT createDebugMessenger();
-    void populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info);
+    static void populateDebugMessenger(VkDebugUtilsMessengerCreateInfoEXT &debug_info);
 
-    std::vector<const char *> getRequiredExtensions();
-    bool checkValidationLayerSupport();
+    static std::vector<const char *> getRequiredExtensions();
+    static bool checkValidationLayerSupport();
 
   private:
     VkInstance instance = nullptr;
     VkDebugUtilsMessengerEXT debug_messenger = nullptr;
-    VkSurfaceKHR window_surface = nullptr;
+    VkSurfaceKHR window_surface;
 };

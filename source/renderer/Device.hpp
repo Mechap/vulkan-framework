@@ -3,6 +3,7 @@
 #include <vendor/vk_mem_alloc.h>
 #include <vulkan/vulkan_core.h>
 
+#include <memory>
 #include <optional>
 
 #include "utility.hpp"
@@ -10,14 +11,13 @@
 class Instance;
 
 struct Mesh;
-struct Vertex;
 
 struct QueueFanmilyIndices final {
     std::optional<uint32_t> graphics_family;
     std::optional<uint32_t> present_family;
     std::optional<uint32_t> transfer_family;
 
-    constexpr bool isComplete() { return graphics_family.has_value() && present_family.has_value() && transfer_family.has_value(); }
+    [[nodiscard]] constexpr bool isComplete() const { return graphics_family.has_value() && present_family.has_value() && transfer_family.has_value(); }
 };
 
 enum class QueueFamilyType {
@@ -26,23 +26,15 @@ enum class QueueFamilyType {
     TRANSFER,
 };
 
-enum class BufferType {
-    VERTEX_BUFFER,
-    INDEX_BUFFER,
-};
-
-struct AllocatedBuffer {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
-
 class Device final : public NoCopy, public NoMove {
   public:
-    explicit Device(const Instance &instance);
+    explicit Device(std::shared_ptr<Instance> instance);
     ~Device();
 
     [[nodiscard]] const VkDevice &getDevice() const { return device; }
     [[nodiscard]] const VkPhysicalDevice &getPhysicalDevice() const { return physical_device; }
+
+    [[nodiscard]] const VmaAllocator &getAllocator() const { return allocator; }
 
     template <QueueFamilyType type>
     [[nodiscard]] constexpr const VkQueue &getQueue() const {
@@ -61,40 +53,19 @@ class Device final : public NoCopy, public NoMove {
         }
     }
 
-    QueueFanmilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice) const;
-
-    AllocatedBuffer createBuffer(VkDeviceSize bufferSize, VkBufferUsageFlags bufferUsage, VmaMemoryUsage memoryUsage) const;
-    void copyBuffer(AllocatedBuffer &srcBuffer, AllocatedBuffer &dstBuffer, VkDeviceSize bufferSize) const;
-
-    void createVertexBuffer(Mesh &mesh) const;
-
-    template <BufferType type>
-    void upload_buffer(Mesh &mesh) {
-        switch (type) {
-            case BufferType::VERTEX_BUFFER:
-                createVertexBuffer(mesh);
-                break;
-
-			// TODO: implement index buffers
-            case BufferType::INDEX_BUFFER:
-				break;
-
-            default:
-                break;
-        }
-    }
+    [[nodiscard]] QueueFanmilyIndices findQueueFamilies(VkPhysicalDevice physicalDevice) const;
 
   private:
     VkDevice createLogicalDevice();
     VmaAllocator createAllocator();
 
-    VkPhysicalDevice pickPhysicalDevices(const Instance &instance);
+    VkPhysicalDevice pickPhysicalDevices();
 
     bool isDeviceSuitable(VkPhysicalDevice physicalDevice) const;
-    bool checkDeviceExtensionsSupport(VkPhysicalDevice physicalDevice) const;
+    static bool checkDeviceExtensionsSupport(VkPhysicalDevice physicalDevice);
 
   private:
-    const Instance &instance;
+    std::shared_ptr<Instance> instance;
 
     VkPhysicalDevice physical_device;
 
@@ -107,6 +78,4 @@ class Device final : public NoCopy, public NoMove {
     VkQueue graphics_queue;
     VkQueue present_queue;
     VkQueue transfer_queue;
-
-    const VkSurfaceKHR window_surface;
 };

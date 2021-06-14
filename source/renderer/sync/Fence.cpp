@@ -4,17 +4,17 @@
 
 #include "renderer/Device.hpp"
 
-Fence::Fence(const Device &device) : device(device) {
+Fence::Fence(std::shared_ptr<Device> _device) : device(std::move(_device)) {
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateFence(device.getDevice(), &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
+    if (vkCreateFence(device->getDevice(), &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
         throw std::runtime_error("failed to create fence!");
     } else {
-    	DeletionQueue::push_function([dev = device.getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
+    	DeletionQueue::push_function([dev = device->getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
 	}
 }
 
-void Fence::reset() { vkResetFences(device.getDevice(), 1, &fence); }
-void Fence::wait(uint64_t timeout) { vkWaitForFences(device.getDevice(), 1, &fence, true, timeout); }
+void Fence::reset() { vkResetFences(device->getDevice(), 1, &fence); }
+void Fence::wait(uint64_t timeout) { vkWaitForFences(device->getDevice(), 1, &fence, true, timeout); }

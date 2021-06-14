@@ -51,6 +51,9 @@ set(sources
 	${SOURCE_DIR}/renderer/sync/CommandBuffer.cpp
 	${SOURCE_DIR}/renderer/sync/Semaphore.cpp
 	${SOURCE_DIR}/renderer/sync/Fence.cpp
+
+	# renderer/ressources
+	${SOURCE_DIR}/renderer/graphics/ressources/Buffer.cpp
 )
 add_executable(${PROJECT_NAME} ${sources})
 target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt spdlog::spdlog)

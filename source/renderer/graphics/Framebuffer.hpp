@@ -4,6 +4,8 @@
 
 #include <functional>
 
+#include "utility.hpp"
+
 class Device;
 class Swapchain;
 
@@ -11,14 +13,14 @@ class RenderPass;
 
 class Framebuffer {
   public:
-    Framebuffer(const Device &device, const VkImageView &attachment, const RenderPass &renderpass, const Swapchain &extent);
+    Framebuffer(std::shared_ptr<Device> _device, nostd::observer_ptr<RenderPass> renderpass, const VkImageView &attachment, const VkExtent2D &extent);
 
     Framebuffer(Framebuffer &&other) noexcept;
     Framebuffer &operator=(Framebuffer &&other) noexcept;
 
-    const VkFramebuffer &getFramebuffer() const { return framebuffer; }
+    [[nodiscard]] const VkFramebuffer &getFramebuffer() const { return framebuffer; }
 
   private:
-    std::reference_wrapper<const Device> device;
+    std::shared_ptr<Device> device;
     VkFramebuffer framebuffer = nullptr;
 };

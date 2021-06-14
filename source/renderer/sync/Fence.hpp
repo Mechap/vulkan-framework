@@ -8,14 +8,14 @@ class Device;
 
 class Fence final : public NoCopy, public NoMove {
   public:
-    explicit Fence(const Device &device);
+    explicit Fence(std::shared_ptr<Device> _device);
 
-	void reset();
-	void wait(uint64_t timeout);
+    void reset();
+    void wait(uint64_t timeout);
 
     const VkFence &getFence() const { return fence; }
 
   private:
-    const Device &device;
+    std::shared_ptr<Device> device;
     VkFence fence = nullptr;
 };

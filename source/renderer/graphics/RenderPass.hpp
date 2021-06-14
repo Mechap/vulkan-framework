@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <memory>
 #include <span>
 #include <vector>
 
@@ -15,25 +16,24 @@ class CommandBuffer;
 
 class RenderPass final : public NoCopy, public NoMove {
   public:
-    RenderPass(const Device &device, const Swapchain &swapchain);
+    RenderPass(std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain);
 
-    void begin(const CommandBuffer &commandBuffer, const Framebuffer &framebuffer, const VkClearValue clearValue);
-	void end(const CommandBuffer &commandBuffer);
+    void begin(nostd::not_null<CommandBuffer> commandBuffer, nostd::not_null<Framebuffer> framebuffer, VkClearValue clearValue);
+    void end(nostd::not_null<CommandBuffer> commandBuffer);
 
   public:
-    const VkRenderPass &getPass() const { return render_pass; }
-    std::span<const VkSubpassDescription> getSubpasses() const { return subpasses; }
+    [[nodiscard]] const VkRenderPass &getPass() const { return render_pass; }
+    [[nodiscard]] std::span<const VkSubpassDescription> getSubpasses() const { return subpasses; }
 
-    std::size_t getAttachmentCount() const { return attachments.size(); }
-    std::span<const VkAttachmentDescription> getAttachments() const { return attachments; }
+    [[nodiscard]] std::size_t getAttachmentCount() const { return attachments.size(); }
+    [[nodiscard]] std::span<const VkAttachmentDescription> getAttachments() const { return attachments; }
 
   private:
-    const Device &device;
-	const Swapchain &swapchain;
+    std::shared_ptr<Device> device;
+    std::shared_ptr<Swapchain> swapchain;
 
     VkRenderPass render_pass = nullptr;
 
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkSubpassDescription> subpasses;
 };
-

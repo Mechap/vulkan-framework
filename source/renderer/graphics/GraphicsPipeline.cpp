@@ -2,8 +2,6 @@
 
 #include <stdexcept>
 
-#include "config.hpp"
-#include "renderer/Device.hpp"
 #include "renderer/Swapchain.hpp"
 #include "renderer/graphics/RenderPass.hpp"
 #include "renderer/graphics/Shader.hpp"
@@ -139,19 +137,20 @@ namespace {
     }
 }  // namespace
 
-GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &renderpass, const Swapchain &swapchain, const VertexInputDescription *inputInfo)
-    : device(device) {
+GraphicsPipeline::GraphicsPipeline(
+    std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain, nostd::not_null<RenderPass> renderpass, const VertexInputDescription *inputInfo)
+    : device(std::move(_device)), swapchain(std::move(_swapchain)) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = swapchain.getExtent().width;
-    viewport.height = swapchain.getExtent().height;
+    viewport.width = swapchain->getExtent().width;
+    viewport.height = swapchain->getExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = swapchain.getExtent();
+    scissor.extent = swapchain->getExtent();
 
     auto viewportInfo = createViewportState(viewport, scissor);
 
@@ -165,15 +164,25 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
     ShaderModule fragmentShader(device, "frag.spv", ShaderType::FRAGMENT_SHADER);
     shader_stages.push_back(createShaderStage(std::move(fragmentShader)));
 
+    // decriptor set layout
+    auto descriptorLayoutInfo = createDescriptorLayout();
+    if (vkCreateDescriptorSetLayout(device->getDevice(), &descriptorLayoutInfo, nullptr, &decriptor_layout) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create descriptor set layout!");
+    } else {
+        DeletionQueue::push_function([dev = device->getDevice(), dl = decriptor_layout]() { vkDestroyDescriptorSetLayout(dev, dl, nullptr); });
+    }
+
     // pipelne layout
     auto pipelineLayoutInfo = createPipelineLayout();
-    if (vkCreatePipelineLayout(device.getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
+    } else {
+        DeletionQueue::push_function([dev = device->getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
     }
 
     // vertex input and input assembly
     vertex_input_info = createVertexInputState(inputInfo);
-    input_assembly = createInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST);
+    input_assembly = createInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     rasterizer = createRasterizationState(VK_POLYGON_MODE_FILL);
     multisampling = createMultisampleState();
 
@@ -192,31 +201,63 @@ GraphicsPipeline::GraphicsPipeline(const Device &device, const RenderPass &rende
     graphicsPipelineInfo.pColorBlendState = &colorBlendInfo;
     graphicsPipelineInfo.pDynamicState = nullptr;
     graphicsPipelineInfo.layout = pipeline_layout;
-    graphicsPipelineInfo.renderPass = renderpass.getPass();
+
+    if (renderpass) {
+        graphicsPipelineInfo.renderPass = renderpass->getPass();
+    } else {
+    	throw std::runtime_error("render pass ptr is invalid!");
+    }
+
     graphicsPipelineInfo.subpass = 0;
     graphicsPipelineInfo.basePipelineHandle = nullptr;
     graphicsPipelineInfo.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(device.getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(device->getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     } else {
-        DeletionQueue::push_function([dev = device.getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
-        DeletionQueue::push_function([dev = device.getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
+        DeletionQueue::push_function([dev = device->getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
     }
 }
 
-void GraphicsPipeline::loadMeshes() {
+Mesh GraphicsPipeline::defaultMeshTriangle() const {
+    Mesh mesh;
+
     mesh.vertices.resize(3);
 
     // vertex positions
     mesh.vertices[0].position = {0.5f, 0.5f, 0.0f};
     mesh.vertices[1].position = {-0.5f, 0.5f, 0.0f};
-    mesh.vertices[2].position = {0.f, -0.5f, 0.0f};
+    mesh.vertices[2].position = {0.0f, -0.5f, 0.0f};
 
     // vertex colors
     mesh.vertices[0].color = {1.f, 0.f, 0.0f};
     mesh.vertices[1].color = {0.f, 1.f, 0.0f};
     mesh.vertices[2].color = {0.f, 0.f, 1.0f};
+
+    return mesh;
+}
+
+Mesh GraphicsPipeline::defaultMeshRectangle() const {
+    Mesh mesh;
+    mesh.vertices.resize(4);
+
+    // vertex positions
+    mesh.vertices[0].position = {0.5f, 0.5f, 0.0f};    // right bottom
+    mesh.vertices[1].position = {0.5f, -0.5f, 0.0f};   // right top
+    mesh.vertices[2].position = {-0.5f, 0.5f, 0.0f};   // left bottom
+    mesh.vertices[3].position = {-0.5f, -0.5f, 0.0f};  // left top
+
+    // vertex colors
+    mesh.vertices[0].color = {1.f, 0.f, 0.0f};
+    mesh.vertices[1].color = {0.f, 1.f, 0.0f};
+    mesh.vertices[2].color = {0.f, 0.f, 1.0f};
+    mesh.vertices[3].color = {1.f, 1.f, 0.0f};
+
+    // index buffer
+    mesh.indices.resize(6);
+    mesh.indices = {0, 1, 3, 1, 2, 3};
+
+    return mesh;
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {
@@ -252,15 +293,30 @@ VkPipelineColorBlendStateCreateInfo GraphicsPipeline::createColorBlendState() co
     return colorBlendInfo;
 }
 
-VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout() {
+VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout() const {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
     pipelineLayoutInfo.flags = 0;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pSetLayouts = nullptr;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &decriptor_layout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
     return pipelineLayoutInfo;
+}
+
+VkDescriptorSetLayoutCreateInfo GraphicsPipeline::createDescriptorLayout() const {
+    VkDescriptorSetLayoutBinding layoutBinding{};
+    layoutBinding.binding = 0;
+    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    layoutBinding.descriptorCount = 1;
+    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
+    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    descriptorLayoutInfo.bindingCount = 1;
+    descriptorLayoutInfo.pBindings = &layoutBinding;
+
+    return descriptorLayoutInfo;
 }

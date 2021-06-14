@@ -2,6 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <memory>
 #include <string_view>
 #include <vector>
 
@@ -16,7 +17,7 @@ enum class ShaderType {
 
 class ShaderModule : public NoCopy, public NoMove {
   public:
-    ShaderModule(const Device &device, const std::string_view filename, ShaderType shaderType);
+    ShaderModule(std::shared_ptr<Device> _device, const std::string_view filename, ShaderType shaderType);
 
     [[nodiscard]] constexpr ShaderType getType() const { return shader_type; }
     [[nodiscard]] const VkShaderModule &getShaderModule() const { return shader_module; }
@@ -25,9 +26,8 @@ class ShaderModule : public NoCopy, public NoMove {
     VkShaderModule create(std::vector<char> &&code);
 
   private:
-    const Device &device;
+  	std::shared_ptr<Device> device;
 
     VkShaderModule shader_module = nullptr;
-	ShaderType shader_type;
+    ShaderType shader_type;
 };
-

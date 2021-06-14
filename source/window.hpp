@@ -6,7 +6,7 @@
 #include <string_view>
 
 struct WindowSpec {
-    WindowSpec(const std::string_view app_name, const glm::vec2 &window_size) : app_name(app_name), window_width(window_size.x), window_height(window_size.y) {}
+    WindowSpec(std::string_view app_name, const glm::vec2 &window_size) : app_name(app_name), window_width(window_size.x), window_height(window_size.y) {}
 
     std::string app_name;
 

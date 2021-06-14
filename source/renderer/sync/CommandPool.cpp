@@ -4,17 +4,17 @@
 
 #include "renderer/Device.hpp"
 
-CommandPool::CommandPool(const Device &device, QueueFamilyType type) : device(device) {
+CommandPool::CommandPool(std::shared_ptr<Device> _device, QueueFamilyType type) : device(std::move(_device)) {
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 
     switch (type) {
         case QueueFamilyType::GRAPHICS:
-            commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).graphics_family.value();
+            commandPoolInfo.queueFamilyIndex = device->findQueueFamilies(device->getPhysicalDevice()).graphics_family.value();
             break;
 
         case QueueFamilyType::PRESENT:
-            commandPoolInfo.queueFamilyIndex = device.findQueueFamilies(device.getPhysicalDevice()).present_family.value();
+            commandPoolInfo.queueFamilyIndex = device->findQueueFamilies(device->getPhysicalDevice()).present_family.value();
             break;
 
         default:
@@ -23,11 +23,11 @@ CommandPool::CommandPool(const Device &device, QueueFamilyType type) : device(de
 
     commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-    if (vkCreateCommandPool(device.getDevice(), &commandPoolInfo, nullptr, &command_pool) != VK_SUCCESS) {
+    if (vkCreateCommandPool(device->getDevice(), &commandPoolInfo, nullptr, &command_pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command pool!");
     } else {
-        DeletionQueue::push_function([dev = device.getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
+        DeletionQueue::push_function([dev = device->getDevice(), cp = command_pool]() { vkDestroyCommandPool(dev, cp, nullptr); });
     }
 }
 
-void CommandPool::reset(VkCommandPoolResetFlags flags) const { vkResetCommandPool(device.getDevice(), command_pool, flags); }
+void CommandPool::reset(VkCommandPoolResetFlags flags) const { vkResetCommandPool(device->getDevice(), command_pool, flags); }

@@ -3,7 +3,6 @@
 #include <fmt/color.h>
 
 #include <stdexcept>
-#include <type_traits>
 
 #include "config.hpp"
 #include "renderer/Instance.hpp"

@@ -4,3 +4,5 @@
 build
 build-vs
 compile_commands.json
+cmake-build-debug
+.idea
