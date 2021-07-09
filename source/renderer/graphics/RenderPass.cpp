@@ -28,12 +28,12 @@ RenderPass::RenderPass(std::shared_ptr<Device> _device, std::shared_ptr<Swapchai
     VkSubpassDescription subpass{};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-	VkAttachmentReference attachmentReference{};
-	attachmentReference.attachment = 0;
-	attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference attachmentReference{};
+    attachmentReference.attachment = 0;
+    attachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    subpass.colorAttachmentCount = 1; 
-    subpass.pColorAttachments = &attachmentReference; 
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &attachmentReference;
 
     subpasses.push_back(subpass);
 
@@ -61,17 +61,17 @@ RenderPass::RenderPass(std::shared_ptr<Device> _device, std::shared_ptr<Swapchai
 
     if (vkCreateRenderPass(device->getDevice(), &renderPassInfo, nullptr, &render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass!");
-    } else {
-    	DeletionQueue::push_function([dev = device->getDevice(), rp = render_pass]() { vkDestroyRenderPass(dev, rp, nullptr); });
-	}
+    }
 }
 
-void RenderPass::begin(nostd::not_null<CommandBuffer> commandBuffer, nostd::not_null<Framebuffer> framebuffer, VkClearValue clearValue) {
+RenderPass::~RenderPass() { vkDestroyRenderPass(device->getDevice(), render_pass, nullptr); }
+
+void RenderPass::begin(const CommandBuffer &commandBuffer, const Framebuffer &framebuffer, VkClearValue clearValue) {
     VkRenderPassBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 
     beginInfo.renderPass = render_pass;
-    beginInfo.framebuffer = framebuffer->getFramebuffer();
+    beginInfo.framebuffer = framebuffer.getFramebuffer();
     beginInfo.renderArea.offset.x = 0;
     beginInfo.renderArea.offset.y = 0;
     beginInfo.renderArea.extent = swapchain->getExtent();
@@ -79,9 +79,7 @@ void RenderPass::begin(nostd::not_null<CommandBuffer> commandBuffer, nostd::not_
     beginInfo.clearValueCount = 1;
     beginInfo.pClearValues = &clearValue;
 
-    vkCmdBeginRenderPass(commandBuffer->getCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBeginRenderPass(commandBuffer.getCommandBuffer(), &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void RenderPass::end(nostd::not_null<CommandBuffer> commandBuffer) {
-    vkCmdEndRenderPass(commandBuffer->getCommandBuffer());
-}
+void RenderPass::end(const CommandBuffer &commandBuffer) { vkCmdEndRenderPass(commandBuffer.getCommandBuffer()); }

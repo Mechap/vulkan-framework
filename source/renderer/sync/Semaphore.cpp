@@ -4,14 +4,14 @@
 
 #include "renderer/Device.hpp"
 
-Semaphore::Semaphore(nostd::not_null<Device> device) {
+Semaphore::Semaphore(const Device &device) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     semaphoreInfo.flags = 0;
 
-    if (vkCreateSemaphore(device->getDevice(), &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS) {
+    if (vkCreateSemaphore(device.getDevice(), &semaphoreInfo, nullptr, &semaphore) != VK_SUCCESS) {
         throw std::runtime_error("failed to create semaphore!");
     } else {
-        DeletionQueue::push_function([dev = device->getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
+        DeletionQueue::push_function([dev = device.getDevice(), sem = semaphore]() { vkDestroySemaphore(dev, sem, nullptr); });
     }
 }

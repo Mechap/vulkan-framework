@@ -8,7 +8,7 @@ class Device;
 
 class Semaphore final : public NoCopy, public NoMove {
   public:
-    explicit Semaphore(nostd::not_null<Device> device);
+    explicit Semaphore(const Device &device);
 
     [[nodiscard]] const VkSemaphore &getSemaphore() const { return semaphore; }
 

@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include <memory>
+
 #include "utility.hpp"
 
 class Device;
@@ -9,6 +11,7 @@ class Device;
 class Fence final : public NoCopy, public NoMove {
   public:
     explicit Fence(std::shared_ptr<Device> _device);
+	~Fence();
 
     void reset();
     void wait(uint64_t timeout);

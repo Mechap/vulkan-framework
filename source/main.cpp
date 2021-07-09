@@ -1,27 +1,31 @@
 #include <fmt/color.h>
 #include <vulkan/vulkan_core.h>
 
+#include <chrono>
 #include <cmath>
 #include <exception>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <renderer/graphics/Shader.hpp>
 
 #include "config.hpp"
 #include "renderer/Device.hpp"
 #include "renderer/Instance.hpp"
 #include "renderer/Swapchain.hpp"
+#include "renderer/graphics/DescriptorSetLayout.hpp"
 #include "renderer/graphics/Framebuffer.hpp"
 #include "renderer/graphics/GraphicsPipeline.hpp"
 #include "renderer/graphics/RenderPass.hpp"
+#include "renderer/graphics/ressources/DecriptorSet.hpp"
+#include "renderer/graphics/ressources/DescriptorPool.hpp"
+#include "renderer/graphics/ressources/Mesh.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 #include "renderer/sync/Semaphore.hpp"
 #include "window.hpp"
 
 struct FrameData {
     explicit FrameData(const std::shared_ptr<Device> &device)
-        : presentSemaphore(nostd::make_not_null(device.get())),
-          renderSemaphore(nostd::make_not_null(device.get())),
-          renderFence(device),
-          commandPool(device, QueueFamilyType::GRAPHICS),
-          commandBuffer(nostd::make_observer(device.get()), commandPool) {}
+        : presentSemaphore(*device), renderSemaphore(*device), renderFence(device), commandPool(device, QueueFamilyType::GRAPHICS), commandBuffer(*device, commandPool) {}
 
     Semaphore presentSemaphore, renderSemaphore;
     Fence renderFence;
@@ -33,9 +37,7 @@ struct FrameData {
 namespace {
     constexpr std::uint32_t FRAME_OVERLAP = 2;
 
-    FrameData &getCurrentFrame(std::span<FrameData> frames, std::uint32_t frameNumber) {
-        return frames[frameNumber % FRAME_OVERLAP];
-    }
+    FrameData &getCurrentFrame(std::span<FrameData> frames, std::uint32_t frameNumber) { return frames[frameNumber % FRAME_OVERLAP]; }
 }  // namespace
 
 int main() {
@@ -47,26 +49,55 @@ int main() {
         auto swapchain = std::make_shared<Swapchain>(instance, device, window);
         auto renderPass = std::make_shared<RenderPass>(device, swapchain);
 
-        auto vertexInputDescription = Vertex::getVertexInputDescription();
+        // graphics pipeline
+        auto vertexInputDescription = std::make_unique<VertexInputDescription>(Vertex::getVertexInputDescription());
 
-        auto graphicsPipeline = std::make_shared<GraphicsPipeline>(device, swapchain, nostd::make_not_null(renderPass.get()), &vertexInputDescription);
+        std::vector<ShaderResource> shaderResssources;
+        shaderResssources.emplace_back(0, ShaderResourceType::BUFFER_UNIFORM, 1, ShaderStage::VERTEX_SHADER, ShaderResourceMode::STATIC, "mvp");
+
+        auto descriptorSetLayout = std::make_shared<DescriptorSetLayout>(device, shaderResssources);
+        auto descriptorPool = std::make_shared<DescriptorPool>(device, *descriptorSetLayout, swapchain->getImageViewCount());
+
+        auto graphicsPipeline =
+            std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(device, swapchain, renderPass, std::move(vertexInputDescription), descriptorSetLayout.get()));
         auto defaultMesh = graphicsPipeline->defaultMeshRectangle();
 
+        // shaders
         auto vertexBuffer = Buffer::createVertexBuffer(defaultMesh.vertices, device);
-        defaultMesh.vertexBuffer = {vertexBuffer.getBuffer(), vertexBuffer.getAllocation()};
+        defaultMesh.vertexBuffer.buffer = vertexBuffer.getBuffer();
+        defaultMesh.vertexBuffer.allocation = vertexBuffer.getAllocation();
 
         auto indexBuffer = Buffer::createIndexBuffer(defaultMesh.indices, device);
-        defaultMesh.indexBuffer = {indexBuffer.getBuffer(), indexBuffer.getAllocation()};
+        defaultMesh.indexBuffer.buffer = indexBuffer.getBuffer();
+        defaultMesh.indexBuffer.allocation = indexBuffer.getAllocation();
 
+        std::vector<Buffer> uniformBuffers;
+        uniformBuffers.reserve(swapchain->getImageViewCount());
+
+        std::vector<DescriptorSet> descriptorSets;
+        descriptorSets.reserve(swapchain->getImageViewCount());
+
+        for (std::size_t i = 0; i < swapchain->getImageViewCount(); ++i) {
+            uniformBuffers.push_back(Buffer::createUniformBuffer(sizeof(UniformObject), device));
+            descriptorSets.emplace_back(device, descriptorPool, descriptorSetLayout);
+        }
+
+        // framebuffers
         std::vector<std::unique_ptr<Framebuffer>> framebuffers;
+        framebuffers.reserve(swapchain->getImageViewCount());
 
         for (std::uint32_t i = 0; i < swapchain->getImageViewCount(); ++i) {
-            framebuffers.emplace_back(std::make_unique<Framebuffer>(device, nostd::make_not_null(renderPass.get()), swapchain->getImageViews()[i], swapchain->getExtent()));
+            framebuffers.push_back(std::make_unique<Framebuffer>(device, *renderPass, swapchain->getImageViews()[i], swapchain->getExtent()));
         }
 
         std::array<FrameData, FRAME_OVERLAP> frames = {FrameData(device), FrameData(device)};
 
         uint32_t frameNumber = 0;
+
+        auto ubo = UniformObject();
+        ubo.model = glm::mat4(1.0f);
+        ubo.view = glm::mat4(1.0f);
+        ubo.proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -100.0f, 100.0f);
 
         while (!window.shouldClose()) {
             auto commandBuffer = getCurrentFrame(frames, frameNumber).commandBuffer;
@@ -78,12 +109,14 @@ int main() {
 
             auto swapchainImageIndex = swapchain->acquireNextImage(getCurrentFrame(frames, frameNumber).presentSemaphore);
 
+            uniformBuffers[swapchainImageIndex].update(ubo);
+
             commandBuffer.reset();
             commandBuffer.begin();
 
             VkClearValue clearValue;
             clearValue.color = {{0.f, 0.f, 0.f, 1.0f}};
-            renderPass->begin(nostd::make_not_null(&commandBuffer), nostd::make_not_null(framebuffers[swapchainImageIndex].get()), clearValue);
+            renderPass->begin(commandBuffer, *framebuffers[swapchainImageIndex], clearValue);
 
             graphicsPipeline->bind(commandBuffer);
 
@@ -91,11 +124,13 @@ int main() {
             vkCmdBindVertexBuffers(commandBuffer.getCommandBuffer(), 0, 1, &defaultMesh.vertexBuffer.buffer, &offset);
             vkCmdBindIndexBuffer(commandBuffer.getCommandBuffer(), defaultMesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
 
-            // vkCmdDraw(getCurrentFrame(frames, frameNumber).commandBuffer.getCommandBuffer(), defaultMesh.vertices.size(), 1, 0, 0);
-            vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
+            descriptorSets[swapchainImageIndex].bind(*graphicsPipeline, commandBuffer);
+            descriptorSets[swapchainImageIndex].update(uniformBuffers[swapchainImageIndex]);
 
-            renderPass->end(nostd::make_not_null(&commandBuffer));
-            commandBuffer.end();
+            ubo.model = glm::rotate(ubo.model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+            uniformBuffers[swapchainImageIndex].update(ubo);
+
+            vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
 
             VkSubmitInfo submit{};
             submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -136,9 +171,18 @@ int main() {
         getCurrentFrame(frames, 0).renderFence.wait(std::numeric_limits<std::uint64_t>::max());
         getCurrentFrame(frames, 1).renderFence.wait(std::numeric_limits<std::uint64_t>::max());
 
+        fmt::print("instance use count : {}\n", instance.use_count());
+        fmt::print("device use count : {}\n", device.use_count());
+        fmt::print("swapchain use count : {}\n", swapchain.use_count());
+        fmt::print("render pass use count : {}\n", renderPass.use_count());
+        fmt::print("graphics pipeline use count : {}\n", graphicsPipeline.use_count());
+
+        fmt::print("swapchain image count : {}\n", swapchain->getImageViewCount());
+        fmt::print("swapchain extent : {} {}\n", swapchain->getExtent().width, swapchain->getExtent().height);
+
         DeletionQueue::flush();
     } catch (const std::exception &e) {
-        fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "[exception] : {}\n", e.what());
+        fmt::print(fmt::fg(fmt::color::orange_red) | fmt::emphasis::bold, "[exception] : {}\n", e.what());
     }
 
     return 0;

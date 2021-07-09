@@ -4,7 +4,6 @@
 
 #include <array>
 #include <glm/matrix.hpp>
-#include <glm/vec3.hpp>
 #include <optional>
 #include <span>
 #include <vector>
@@ -21,6 +20,8 @@ class Swapchain;
 class CommandBuffer;
 class RenderPass;
 
+class DescriptorSetLayout;
+
 struct VertexInputDescription {
     std::vector<VkVertexInputBindingDescription> bindings;
     std::vector<VkVertexInputAttributeDescription> attributes;
@@ -28,52 +29,62 @@ struct VertexInputDescription {
     VkPipelineVertexInputStateCreateFlags flags = 0;
 };
 
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 color;
-
-    static VertexInputDescription getVertexInputDescription();
-};
-
 struct AllocatedBuffer {
     VkBuffer buffer;
     VmaAllocation allocation;
 };
 
-struct Mesh {
-    AllocatedBuffer vertexBuffer;
-    AllocatedBuffer indexBuffer;
+enum class DrawPrimitive;
 
-    std::vector<Vertex> vertices;
-    std::vector<uint16_t> indices;
+struct UniformObject {
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::mat4 proj;
 };
 
 class GraphicsPipeline : public NoCopy, public NoMove {
   public:
-    GraphicsPipeline(
-        std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain, nostd::not_null<RenderPass> renderpass,
-        const VertexInputDescription *inputInfo = nullptr);
+    struct PipelineInfo {
+        PipelineInfo(
+            std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain, std::shared_ptr<RenderPass> _render_pass,
+            std::unique_ptr<VertexInputDescription> &&_input_info = nullptr, DescriptorSetLayout *_descriptor_set_layout = nullptr)
+            : device(std::move(_device)),
+              swapchain(std::move(_swapchain)),
+              render_pass(std::move(_render_pass)),
+              input_info(std::move(_input_info)),
+              descriptor_set_layout(nostd::make_observer(_descriptor_set_layout)) {}
+
+        std::shared_ptr<Device> device;
+        std::shared_ptr<Swapchain> swapchain;
+        std::shared_ptr<RenderPass> render_pass;
+
+        std::unique_ptr<VertexInputDescription> input_info;
+        nostd::observer_ptr<DescriptorSetLayout> descriptor_set_layout;
+    };
+
+  public:
+    explicit GraphicsPipeline(PipelineInfo &&pipelineInfo);
+    ~GraphicsPipeline();
 
     void bind(const CommandBuffer &commandBuffer) const;
 
-    [[nodiscard]] Mesh defaultMeshTriangle() const;
-    [[nodiscard]] Mesh defaultMeshRectangle() const;
+    [[nodiscard]] VkPipeline getPipeline() const { return graphics_pipeline; }
+    [[nodiscard]] VkPipelineLayout getPipelineLayout() const { return pipeline_layout; }
+
+    [[nodiscard]] static Mesh defaultMeshTriangle();
+    [[nodiscard]] static Mesh defaultMeshRectangle();
 
   private:
     [[nodiscard]] VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;
     [[nodiscard]] VkPipelineColorBlendStateCreateInfo createColorBlendState() const;
 
-    [[nodiscard]] VkPipelineLayoutCreateInfo createPipelineLayout() const;
-    [[nodiscard]] VkDescriptorSetLayoutCreateInfo createDescriptorLayout() const;
+    [[nodiscard]] VkPipelineLayoutCreateInfo createPipelineLayout(nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout = nullptr) const;
 
   private:
-    std::shared_ptr<Device> device;
-    std::shared_ptr<Swapchain> swapchain;
+    PipelineInfo pipeline_info;
 
     VkPipeline graphics_pipeline = nullptr;
     VkPipelineLayout pipeline_layout = nullptr;
-
-    VkDescriptorSetLayout decriptor_layout;
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
 

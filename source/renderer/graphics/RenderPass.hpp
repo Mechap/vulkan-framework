@@ -17,9 +17,10 @@ class CommandBuffer;
 class RenderPass final : public NoCopy, public NoMove {
   public:
     RenderPass(std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain);
+    ~RenderPass();
 
-    void begin(nostd::not_null<CommandBuffer> commandBuffer, nostd::not_null<Framebuffer> framebuffer, VkClearValue clearValue);
-    void end(nostd::not_null<CommandBuffer> commandBuffer);
+    void begin(const CommandBuffer &commandBuffer, const Framebuffer &framebuffer, VkClearValue clearValue);
+    void end(const CommandBuffer &commandBuffer);
 
   public:
     [[nodiscard]] const VkRenderPass &getPass() const { return render_pass; }

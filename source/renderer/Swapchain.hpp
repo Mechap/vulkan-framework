@@ -5,6 +5,7 @@
 
 #include <span>
 #include <vector>
+#include <memory>
 
 #include "utility.hpp"
 
@@ -24,6 +25,7 @@ struct SwapchainProperties {
 class Swapchain final : public NoCopy, public NoMove {
   public:
     Swapchain(std::shared_ptr<Instance> _instance, std::shared_ptr<Device> _device, const Window &window);
+	~Swapchain();
 
     [[nodiscard]] const VkSwapchainKHR &getSwapchain() const { return swapchain; }
     [[nodiscard]] const VkFormat &getFormat() const { return swapchain_image_format; }

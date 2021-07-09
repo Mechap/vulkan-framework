@@ -28,7 +28,7 @@ namespace {
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
         void *pUserData) {
         if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "{}\n", pCallbackData->pMessage);
+            fmt::print(fmt::fg(fmt::color::crimson) | fmt::emphasis::bold, "{}\n\n", pCallbackData->pMessage);
         }
 
         return VK_FALSE;

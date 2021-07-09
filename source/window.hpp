@@ -4,6 +4,7 @@
 
 #include <glm/vec2.hpp>
 #include <string_view>
+#include <string>
 
 struct WindowSpec {
     WindowSpec(std::string_view app_name, const glm::vec2 &window_size) : app_name(app_name), window_width(window_size.x), window_height(window_size.y) {}

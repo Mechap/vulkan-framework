@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <functional>
+#include <memory>
 
 #include "utility.hpp"
 
@@ -13,7 +14,7 @@ class RenderPass;
 
 class Framebuffer {
   public:
-    Framebuffer(std::shared_ptr<Device> _device, nostd::observer_ptr<RenderPass> renderpass, const VkImageView &attachment, const VkExtent2D &extent);
+    Framebuffer(std::shared_ptr<Device> _device, const RenderPass &renderpass, const VkImageView &attachment, const VkExtent2D &extent);
 
     Framebuffer(Framebuffer &&other) noexcept;
     Framebuffer &operator=(Framebuffer &&other) noexcept;

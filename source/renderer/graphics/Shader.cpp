@@ -12,7 +12,6 @@ namespace {
         std::ifstream file(filename.data(), std::ios::ate | std::ios::binary);
         if (!file.is_open()) {
             throw std::fstream::failure(fmt::format("couldn't load spir-v file at : {}\n", filename));
-        } else {
         }
 
         auto fileSize = static_cast<std::size_t>(file.tellg());
@@ -26,14 +25,13 @@ namespace {
     }
 }  // namespace
 
-ShaderModule::ShaderModule(std::shared_ptr<Device> _device, const std::string_view filename, ShaderType shaderType) : device(std::move(_device)) {
+ShaderModule::ShaderModule(std::shared_ptr<Device> _device, const std::string_view filename, ShaderStage shaderStage) : device(std::move(_device)), shader_stage(shaderStage) {
     shader_module = create(readFile(filename));
-    shader_type = shaderType;
-
-    DeletionQueue::push_function([dev = device->getDevice(), sm = shader_module]() { vkDestroyShaderModule(dev, sm, nullptr); });
 }
 
-VkShaderModule ShaderModule::create(std::vector<char> &&code) {
+ShaderModule::~ShaderModule() { vkDestroyShaderModule(device->getDevice(), shader_module, nullptr); }
+
+VkShaderModule ShaderModule::create(std::span<const char> code) {
     VkShaderModuleCreateInfo shaderModuleInfo{};
     shaderModuleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 

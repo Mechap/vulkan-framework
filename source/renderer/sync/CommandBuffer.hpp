@@ -10,7 +10,7 @@ class CommandPool;
 
 class CommandBuffer final {
   public:
-    explicit CommandBuffer(nostd::not_null<Device> device, const CommandPool &command_pool, uint32_t commandBufferCount = 1);
+    explicit CommandBuffer(const Device &device, const CommandPool &command_pool, uint32_t commandBufferCount = 1);
 
     void begin() const;
     void end() const { vkEndCommandBuffer(command_buffer); }

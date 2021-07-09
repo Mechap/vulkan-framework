@@ -17,7 +17,4 @@ class Application {
 
   private:
     std::unique_ptr<Window> window;
-    std::unique_ptr<Instance> instance;
-    std::unique_ptr<Device> device;
-    std::unique_ptr<Swapchain> swapchain;
 };

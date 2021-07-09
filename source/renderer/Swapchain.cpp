@@ -60,11 +60,13 @@ Swapchain::Swapchain(std::shared_ptr<Instance> _instance, std::shared_ptr<Device
 
     create(window.getWindow());
     createViews();
+}
 
-    for (const auto &view : image_views) {
-        DeletionQueue::push_function([dev = device->getDevice(), v = view]() { vkDestroyImageView(dev, v, nullptr); });
-    }
-    DeletionQueue::push_function([dev = device->getDevice(), sc = swapchain]() { vkDestroySwapchainKHR(dev, sc, nullptr); });
+Swapchain::~Swapchain() {
+	for (const auto &view : image_views) {
+		vkDestroyImageView(device->getDevice(), view, nullptr);
+	}
+	vkDestroySwapchainKHR(device->getDevice(), swapchain, nullptr);
 }
 
 uint32_t Swapchain::acquireNextImage(const Semaphore &presentSemaphore) const {

@@ -11,10 +11,10 @@ Fence::Fence(std::shared_ptr<Device> _device) : device(std::move(_device)) {
 
     if (vkCreateFence(device->getDevice(), &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
         throw std::runtime_error("failed to create fence!");
-    } else {
-    	DeletionQueue::push_function([dev = device->getDevice(), fc = fence]() { vkDestroyFence(dev, fc, nullptr); });
-	}
+    }
 }
+
+Fence::~Fence() { vkDestroyFence(device->getDevice(), fence, nullptr); }
 
 void Fence::reset() { vkResetFences(device->getDevice(), 1, &fence); }
 void Fence::wait(uint64_t timeout) { vkWaitForFences(device->getDevice(), 1, &fence, true, timeout); }

@@ -3,8 +3,11 @@
 #include <stdexcept>
 
 #include "renderer/Swapchain.hpp"
+#include "renderer/graphics/DescriptorSetLayout.hpp"
 #include "renderer/graphics/RenderPass.hpp"
+#include "renderer/graphics/Renderer.hpp"
 #include "renderer/graphics/Shader.hpp"
+#include "renderer/graphics/ressources/Mesh.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 
 VertexInputDescription Vertex::getVertexInputDescription() {
@@ -39,16 +42,16 @@ VertexInputDescription Vertex::getVertexInputDescription() {
 }
 
 namespace {
-    VkPipelineShaderStageCreateInfo createShaderStage(ShaderModule &&shader) {
+    VkPipelineShaderStageCreateInfo createShaderStage(const ShaderModule &shader) {
         VkPipelineShaderStageCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
-        switch (shader.getType()) {
-            case ShaderType::VERTEX_SHADER:
+        switch (shader.getStage()) {
+            case ShaderStage::VERTEX_SHADER:
                 info.stage = VK_SHADER_STAGE_VERTEX_BIT;
                 break;
 
-            case ShaderType::FRAGMENT_SHADER:
+            case ShaderStage::FRAGMENT_SHADER:
                 info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 break;
 
@@ -103,8 +106,8 @@ namespace {
         info.polygonMode = polygonMode;
         info.lineWidth = 1.0f;
 
-        info.cullMode = VK_CULL_MODE_BACK_BIT;
-        info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        info.cullMode = VK_CULL_MODE_FRONT_BIT;
+        info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 
         info.depthBiasEnable = VK_FALSE;
         info.depthBiasConstantFactor = 0.0f;
@@ -137,20 +140,18 @@ namespace {
     }
 }  // namespace
 
-GraphicsPipeline::GraphicsPipeline(
-    std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain, nostd::not_null<RenderPass> renderpass, const VertexInputDescription *inputInfo)
-    : device(std::move(_device)), swapchain(std::move(_swapchain)) {
+GraphicsPipeline::GraphicsPipeline(GraphicsPipeline::PipelineInfo &&pipelineInfo) : pipeline_info(std::move(pipelineInfo)) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = swapchain->getExtent().width;
-    viewport.height = swapchain->getExtent().height;
+    viewport.width = pipeline_info.swapchain->getExtent().width;
+    viewport.height = pipeline_info.swapchain->getExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = swapchain->getExtent();
+    scissor.extent = pipeline_info.swapchain->getExtent();
 
     auto viewportInfo = createViewportState(viewport, scissor);
 
@@ -158,30 +159,25 @@ GraphicsPipeline::GraphicsPipeline(
     auto colorBlendInfo = createColorBlendState();
 
     // Shaders
-    ShaderModule vertexShader(device, "vert.spv", ShaderType::VERTEX_SHADER);
-    shader_stages.push_back(createShaderStage(std::move(vertexShader)));
+    ShaderModule vertexShader(pipeline_info.device, "vert.spv", ShaderStage::VERTEX_SHADER);
+    shader_stages.push_back(createShaderStage(vertexShader));
 
-    ShaderModule fragmentShader(device, "frag.spv", ShaderType::FRAGMENT_SHADER);
-    shader_stages.push_back(createShaderStage(std::move(fragmentShader)));
+    ShaderModule fragmentShader(pipeline_info.device, "frag.spv", ShaderStage::FRAGMENT_SHADER);
+    shader_stages.push_back(createShaderStage(fragmentShader));
 
-    // decriptor set layout
-    auto descriptorLayoutInfo = createDescriptorLayout();
-    if (vkCreateDescriptorSetLayout(device->getDevice(), &descriptorLayoutInfo, nullptr, &decriptor_layout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout!");
-    } else {
-        DeletionQueue::push_function([dev = device->getDevice(), dl = decriptor_layout]() { vkDestroyDescriptorSetLayout(dev, dl, nullptr); });
-    }
+    // pipeline layout
+    auto descriptorSetLayout = pipeline_info.descriptor_set_layout->getLayout();
+    auto pipelineLayoutInfo = createPipelineLayout(nostd::make_observer(&descriptorSetLayout));
 
-    // pipelne layout
-    auto pipelineLayoutInfo = createPipelineLayout();
-    if (vkCreatePipelineLayout(device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(pipeline_info.device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
-    } else {
-        DeletionQueue::push_function([dev = device->getDevice(), pl = pipeline_layout]() { vkDestroyPipelineLayout(dev, pl, nullptr); });
     }
 
     // vertex input and input assembly
-    vertex_input_info = createVertexInputState(inputInfo);
+    if (pipeline_info.input_info) {
+        vertex_input_info = createVertexInputState(pipeline_info.input_info.get());
+    }
+
     input_assembly = createInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
     rasterizer = createRasterizationState(VK_POLYGON_MODE_FILL);
     multisampling = createMultisampleState();
@@ -202,25 +198,24 @@ GraphicsPipeline::GraphicsPipeline(
     graphicsPipelineInfo.pDynamicState = nullptr;
     graphicsPipelineInfo.layout = pipeline_layout;
 
-    if (renderpass) {
-        graphicsPipelineInfo.renderPass = renderpass->getPass();
-    } else {
-    	throw std::runtime_error("render pass ptr is invalid!");
-    }
+    graphicsPipelineInfo.renderPass = pipeline_info.render_pass->getPass();
 
     graphicsPipelineInfo.subpass = 0;
     graphicsPipelineInfo.basePipelineHandle = nullptr;
     graphicsPipelineInfo.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(device->getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(pipeline_info.device->getDevice(), nullptr, 1, &graphicsPipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
-    } else {
-        DeletionQueue::push_function([dev = device->getDevice(), gp = graphics_pipeline]() { vkDestroyPipeline(dev, gp, nullptr); });
     }
 }
 
-Mesh GraphicsPipeline::defaultMeshTriangle() const {
-    Mesh mesh;
+GraphicsPipeline::~GraphicsPipeline() {
+    vkDestroyPipelineLayout(pipeline_info.device->getDevice(), pipeline_layout, nullptr);
+    vkDestroyPipeline(pipeline_info.device->getDevice(), graphics_pipeline, nullptr);
+}
+
+Mesh GraphicsPipeline::defaultMeshTriangle() {
+    auto mesh = Mesh();
 
     mesh.vertices.resize(3);
 
@@ -234,18 +229,20 @@ Mesh GraphicsPipeline::defaultMeshTriangle() const {
     mesh.vertices[1].color = {0.f, 1.f, 0.0f};
     mesh.vertices[2].color = {0.f, 0.f, 1.0f};
 
+	mesh.primitive = DrawPrimitive::TRIANGLE;
+
     return mesh;
 }
 
-Mesh GraphicsPipeline::defaultMeshRectangle() const {
-    Mesh mesh;
+Mesh GraphicsPipeline::defaultMeshRectangle() {
+    auto mesh = Mesh();
     mesh.vertices.resize(4);
 
     // vertex positions
-    mesh.vertices[0].position = {0.5f, 0.5f, 0.0f};    // right bottom
-    mesh.vertices[1].position = {0.5f, -0.5f, 0.0f};   // right top
-    mesh.vertices[2].position = {-0.5f, 0.5f, 0.0f};   // left bottom
-    mesh.vertices[3].position = {-0.5f, -0.5f, 0.0f};  // left top
+    mesh.vertices[0].position = {400.0f, 400.0f, 0.0f};    // right bottom
+    mesh.vertices[1].position = {400.0f, 200.0f, 0.0f};   // right top
+    mesh.vertices[2].position = {200.0f, 400.0f, 0.0f};   // left bottom
+    mesh.vertices[3].position = {200.0f, 200.0f, 0.0f};  // left top
 
     // vertex colors
     mesh.vertices[0].color = {1.f, 0.f, 0.0f};
@@ -255,14 +252,14 @@ Mesh GraphicsPipeline::defaultMeshRectangle() const {
 
     // index buffer
     mesh.indices.resize(6);
-    mesh.indices = {0, 1, 3, 1, 2, 3};
+    mesh.indices = {0, 1, 3, 0, 2, 1};
+
+	mesh.primitive = DrawPrimitive::RECTANGLE;
 
     return mesh;
 }
 
-void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const {
-    vkCmdBindPipeline(commandBuffer.getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
-}
+void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const { vkCmdBindPipeline(commandBuffer.getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline); }
 
 VkPipelineViewportStateCreateInfo GraphicsPipeline::createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const {
     VkPipelineViewportStateCreateInfo viewportInfo{};
@@ -293,30 +290,21 @@ VkPipelineColorBlendStateCreateInfo GraphicsPipeline::createColorBlendState() co
     return colorBlendInfo;
 }
 
-VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout() const {
+VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout(nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout) const {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
     pipelineLayoutInfo.flags = 0;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &decriptor_layout;
+
+    if (descriptorSetLayout) {
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayout.get();
+    } else {
+        pipelineLayoutInfo.setLayoutCount = 0;
+        pipelineLayoutInfo.pSetLayouts = nullptr;
+    }
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
     return pipelineLayoutInfo;
-}
-
-VkDescriptorSetLayoutCreateInfo GraphicsPipeline::createDescriptorLayout() const {
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    layoutBinding.descriptorCount = 1;
-    layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-    VkDescriptorSetLayoutCreateInfo descriptorLayoutInfo{};
-    descriptorLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    descriptorLayoutInfo.bindingCount = 1;
-    descriptorLayoutInfo.pBindings = &layoutBinding;
-
-    return descriptorLayoutInfo;
 }

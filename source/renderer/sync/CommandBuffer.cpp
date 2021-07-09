@@ -5,7 +5,7 @@
 #include "renderer/Device.hpp"
 #include "renderer/sync/CommandPool.hpp"
 
-CommandBuffer::CommandBuffer(nostd::not_null<Device> device, const CommandPool &command_pool, uint32_t commandBufferCount) {
+CommandBuffer::CommandBuffer(const Device &device, const CommandPool &command_pool, uint32_t commandBufferCount) {
     VkCommandBufferAllocateInfo commandBufferInfo{};
     commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 
@@ -13,7 +13,7 @@ CommandBuffer::CommandBuffer(nostd::not_null<Device> device, const CommandPool &
     commandBufferInfo.commandBufferCount = commandBufferCount;
     commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 
-    if (vkAllocateCommandBuffers(device->getDevice(), &commandBufferInfo, &command_buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(device.getDevice(), &commandBufferInfo, &command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to create command buffers!");
     }
 }

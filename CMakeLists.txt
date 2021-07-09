@@ -13,20 +13,26 @@ endif()
 
 set(CMAKE_CXX_CLANG_TIDY
 	clang-tidy;
-	-checks=-*,cppcoreguidelines-*,bugprone-*,performance-*,modernize-*,analyze-*,-modernize-use-trailing-return-type*;
+	-checks=-*,cppcoreguidelines-*,bugprone-*,performance-*,modernize-*,analyze-*,-modernize-use-trailing-return-type*,-cppcoreguidelines-avoid-magic-numbers*;
 	-p=std=c++20;
 	--use-color)
 
-# add log lib
-add_subdirectory(external/fmt)
-add_subdirectory(external/spdlog)
+# add fmt lib
+include(FetchContent)
+FetchContent_Declare(
+	fmt
+	GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+	GIT_TAG master
+)
+
+FetchContent_MakeAvailable(fmt)
 
 # Set directory paths
 set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-set(sources 
+set(sources
 	${SOURCE_DIR}/vendor/vk_mem_alloc.cpp
 
 	${SOURCE_DIR}/main.cpp
@@ -45,6 +51,7 @@ set(sources
 	${SOURCE_DIR}/renderer/graphics/RenderPass.cpp
 	${SOURCE_DIR}/renderer/graphics/Framebuffer.cpp
 	${SOURCE_DIR}/renderer/graphics/Renderer.cpp
+    ${SOURCE_DIR}/renderer/graphics/DescriptorSetLayout.cpp
 
 	# renderer/sync
 	${SOURCE_DIR}/renderer/sync/CommandPool.cpp
@@ -54,13 +61,16 @@ set(sources
 
 	# renderer/ressources
 	${SOURCE_DIR}/renderer/graphics/ressources/Buffer.cpp
+	${SOURCE_DIR}/renderer/graphics/ressources/Mesh.cpp
+	${SOURCE_DIR}/renderer/graphics/ressources/DescriptorPool.cpp
+	${SOURCE_DIR}/renderer/graphics/ressources/DescriptorSet.cpp
 )
 add_executable(${PROJECT_NAME} ${sources})
-target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt spdlog::spdlog)
+target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-nullability-extension -Wno-nullability-completeness -Wno-gnu-zero-variadic-macro-arguments -Wno-missing-field-initializers -Wno-unused-parameter>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-parameter>
 )
 
 # Vulkan

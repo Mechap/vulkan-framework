@@ -3,9 +3,9 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan_core.h>
 
+#include <cassert>
 #include <string_view>
 #include <vector>
-#include <cassert>
 
 #include "utility.hpp"
 
@@ -13,7 +13,7 @@ class Window;
 
 class Instance final : public NoCopy, public NoMove {
   public:
-    Instance(const Window &window, std::string_view app_name , uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
+    Instance(const Window &window, std::string_view app_name, uint32_t app_version = VK_MAKE_VERSION(1, 0, 0));
     ~Instance();
 
     [[nodiscard]] VkInstance getInstance() const { return instance; }
