@@ -36,8 +36,7 @@ class Device final : public NoCopy, public NoMove {
 
     [[nodiscard]] const VmaAllocator &getAllocator() const { return allocator; }
 
-    template <QueueFamilyType type>
-    [[nodiscard]] constexpr const VkQueue &getQueue() const {
+    [[nodiscard]] constexpr const VkQueue &getQueue(QueueFamilyType type) const {
         switch (type) {
             case QueueFamilyType::GRAPHICS:
                 return graphics_queue;

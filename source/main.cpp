@@ -59,7 +59,7 @@ int main() {
         auto descriptorPool = std::make_shared<DescriptorPool>(device, *descriptorSetLayout, swapchain->getImageViewCount());
 
         auto graphicsPipeline =
-            std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(device, swapchain, renderPass, std::move(vertexInputDescription), descriptorSetLayout.get()));
+            std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(device, swapchain, renderPass, descriptorSetLayout, std::move(vertexInputDescription)));
         auto defaultMesh = graphicsPipeline->defaultMeshRectangle();
 
         // shaders
@@ -127,10 +127,16 @@ int main() {
             descriptorSets[swapchainImageIndex].bind(*graphicsPipeline, commandBuffer);
             descriptorSets[swapchainImageIndex].update(uniformBuffers[swapchainImageIndex]);
 
-            ubo.model = glm::rotate(ubo.model, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-            uniformBuffers[swapchainImageIndex].update(ubo);
-
             vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
+
+            /*
+			ubo.model = glm::translate(ubo.model, glm::vec3(200.f, 200.f, 0.f));
+			uniformBuffers[swapchainImageIndex].update(ubo);
+			vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
+            */
+
+            renderPass->end(commandBuffer);
+            commandBuffer.end();
 
             VkSubmitInfo submit{};
             submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -147,7 +153,7 @@ int main() {
             submit.commandBufferCount = 1;
             submit.pCommandBuffers = &commandBuffer.getCommandBuffer();
 
-            vkQueueSubmit(device->getQueue<QueueFamilyType::GRAPHICS>(), 1, &submit, getCurrentFrame(frames, frameNumber).renderFence.getFence());
+            vkQueueSubmit(device->getQueue(QueueFamilyType::GRAPHICS), 1, &submit, getCurrentFrame(frames, frameNumber).renderFence.getFence());
 
             VkPresentInfoKHR presentInfo{};
             presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -159,7 +165,7 @@ int main() {
             presentInfo.pWaitSemaphores = &getCurrentFrame(frames, frameNumber).renderSemaphore.getSemaphore();
 
             presentInfo.pImageIndices = &swapchainImageIndex;
-            vkQueuePresentKHR(device->getQueue<QueueFamilyType::PRESENT>(), &presentInfo);
+            vkQueuePresentKHR(device->getQueue(QueueFamilyType::PRESENT), &presentInfo);
 
             if (frameNumber < 1) {
                 frameNumber++;

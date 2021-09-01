@@ -10,7 +10,7 @@
 #include "renderer/graphics/ressources/Mesh.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 
-VertexInputDescription Vertex::getVertexInputDescription() {
+[[nodiscard]] VertexInputDescription Vertex::getVertexInputDescription() {
     VertexInputDescription description;
 
     VkVertexInputBindingDescription mainBinding{};
@@ -42,7 +42,7 @@ VertexInputDescription Vertex::getVertexInputDescription() {
 }
 
 namespace {
-    VkPipelineShaderStageCreateInfo createShaderStage(const ShaderModule &shader) {
+    [[nodiscard]] VkPipelineShaderStageCreateInfo createShaderStage(const ShaderModule &shader) {
         VkPipelineShaderStageCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 
@@ -65,11 +65,11 @@ namespace {
         return info;
     }
 
-    VkPipelineVertexInputStateCreateInfo createVertexInputState(const VertexInputDescription *inputInfo) {
+    [[nodiscard]] VkPipelineVertexInputStateCreateInfo createVertexInputState(const nostd::not_null<VertexInputDescription> inputInfo) {
         VkPipelineVertexInputStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        if (inputInfo != nullptr) {
+        if (inputInfo.get() != nullptr) {
             info.vertexAttributeDescriptionCount = inputInfo->attributes.size();
             info.pVertexAttributeDescriptions = inputInfo->attributes.data();
 
@@ -86,7 +86,7 @@ namespace {
         return info;
     }
 
-    VkPipelineInputAssemblyStateCreateInfo createInputAssembly(VkPrimitiveTopology topology) {
+    [[nodiscard]] VkPipelineInputAssemblyStateCreateInfo createInputAssembly(VkPrimitiveTopology topology) {
         VkPipelineInputAssemblyStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 
@@ -96,7 +96,7 @@ namespace {
         return info;
     }
 
-    VkPipelineRasterizationStateCreateInfo createRasterizationState(VkPolygonMode polygonMode) {
+    [[nodiscard]] VkPipelineRasterizationStateCreateInfo createRasterizationState(VkPolygonMode polygonMode) {
         VkPipelineRasterizationStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 
@@ -117,7 +117,7 @@ namespace {
         return info;
     }
 
-    VkPipelineMultisampleStateCreateInfo createMultisampleState() {
+    [[nodiscard]] VkPipelineMultisampleStateCreateInfo createMultisampleState() {
         VkPipelineMultisampleStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
 
@@ -131,7 +131,7 @@ namespace {
         return info;
     }
 
-    VkPipelineColorBlendAttachmentState createColorBlendAttachmentState() {
+    [[nodiscard]] VkPipelineColorBlendAttachmentState createColorBlendAttachmentState() {
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachment.blendEnable = VK_FALSE;
@@ -166,8 +166,8 @@ GraphicsPipeline::GraphicsPipeline(GraphicsPipeline::PipelineInfo &&pipelineInfo
     shader_stages.push_back(createShaderStage(fragmentShader));
 
     // pipeline layout
-    auto descriptorSetLayout = pipeline_info.descriptor_set_layout->getLayout();
-    auto pipelineLayoutInfo = createPipelineLayout(nostd::make_observer(&descriptorSetLayout));
+	auto set_layout = pipeline_info.descriptor_set_layout->getLayout();
+    auto pipelineLayoutInfo = createPipelineLayout(nostd::make_observer(&set_layout));
 
     if (vkCreatePipelineLayout(pipeline_info.device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("failed to create pipeline layout!");
@@ -175,7 +175,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsPipeline::PipelineInfo &&pipelineInfo
 
     // vertex input and input assembly
     if (pipeline_info.input_info) {
-        vertex_input_info = createVertexInputState(pipeline_info.input_info.get());
+        vertex_input_info = createVertexInputState(nostd::make_not_null(pipeline_info.input_info.get()));
     }
 
     input_assembly = createInputAssembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
@@ -214,7 +214,7 @@ GraphicsPipeline::~GraphicsPipeline() {
     vkDestroyPipeline(pipeline_info.device->getDevice(), graphics_pipeline, nullptr);
 }
 
-Mesh GraphicsPipeline::defaultMeshTriangle() {
+[[nodiscard]] Mesh GraphicsPipeline::defaultMeshTriangle() {
     auto mesh = Mesh();
 
     mesh.vertices.resize(3);
@@ -229,19 +229,19 @@ Mesh GraphicsPipeline::defaultMeshTriangle() {
     mesh.vertices[1].color = {0.f, 1.f, 0.0f};
     mesh.vertices[2].color = {0.f, 0.f, 1.0f};
 
-	mesh.primitive = DrawPrimitive::TRIANGLE;
+    mesh.primitive = DrawPrimitive::TRIANGLE;
 
     return mesh;
 }
 
-Mesh GraphicsPipeline::defaultMeshRectangle() {
+[[nodiscard]] Mesh GraphicsPipeline::defaultMeshRectangle() {
     auto mesh = Mesh();
     mesh.vertices.resize(4);
 
     // vertex positions
-    mesh.vertices[0].position = {400.0f, 400.0f, 0.0f};    // right bottom
-    mesh.vertices[1].position = {400.0f, 200.0f, 0.0f};   // right top
-    mesh.vertices[2].position = {200.0f, 400.0f, 0.0f};   // left bottom
+    mesh.vertices[0].position = {400.0f, 400.0f, 0.0f};  // right bottom
+    mesh.vertices[1].position = {400.0f, 200.0f, 0.0f};  // right top
+    mesh.vertices[2].position = {200.0f, 400.0f, 0.0f};  // left bottom
     mesh.vertices[3].position = {200.0f, 200.0f, 0.0f};  // left top
 
     // vertex colors
@@ -254,14 +254,14 @@ Mesh GraphicsPipeline::defaultMeshRectangle() {
     mesh.indices.resize(6);
     mesh.indices = {0, 1, 3, 0, 2, 1};
 
-	mesh.primitive = DrawPrimitive::RECTANGLE;
+    mesh.primitive = DrawPrimitive::RECTANGLE;
 
     return mesh;
 }
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const { vkCmdBindPipeline(commandBuffer.getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline); }
 
-VkPipelineViewportStateCreateInfo GraphicsPipeline::createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const {
+[[nodiscard]] VkPipelineViewportStateCreateInfo GraphicsPipeline::createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const {
     VkPipelineViewportStateCreateInfo viewportInfo{};
     viewportInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 
@@ -273,7 +273,7 @@ VkPipelineViewportStateCreateInfo GraphicsPipeline::createViewportState(const Vk
     return viewportInfo;
 }
 
-VkPipelineColorBlendStateCreateInfo GraphicsPipeline::createColorBlendState() const {
+[[nodiscard]] VkPipelineColorBlendStateCreateInfo GraphicsPipeline::createColorBlendState() const {
     VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
     colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 
@@ -290,7 +290,8 @@ VkPipelineColorBlendStateCreateInfo GraphicsPipeline::createColorBlendState() co
     return colorBlendInfo;
 }
 
-VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout(nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout) const {
+[[nodiscard]] VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout(
+    nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout, nostd::observer_ptr<PushConstants> pushConstants) const {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 
@@ -303,8 +304,12 @@ VkPipelineLayoutCreateInfo GraphicsPipeline::createPipelineLayout(nostd::observe
         pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pSetLayouts = nullptr;
     }
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
+
+    if (pushConstants) {
+    } else {
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    }
 
     return pipelineLayoutInfo;
 }

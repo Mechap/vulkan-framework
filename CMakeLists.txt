@@ -7,7 +7,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option (FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (Clang only)." TRUE)
 if (${FORCE_COLORED_OUTPUT})
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-       add_compile_options (-fcolor-diagnostics -fansi-escape-codes)
+       add_compile_options (-fdiagnostics-color)
     endif()
 endif()
 
@@ -52,6 +52,7 @@ set(sources
 	${SOURCE_DIR}/renderer/graphics/Framebuffer.cpp
 	${SOURCE_DIR}/renderer/graphics/Renderer.cpp
     ${SOURCE_DIR}/renderer/graphics/DescriptorSetLayout.cpp
+	${SOURCE_DIR}/renderer/graphics/PushConstants.cpp
 
 	# renderer/sync
 	${SOURCE_DIR}/renderer/sync/CommandPool.cpp

@@ -54,7 +54,7 @@ void Renderer::createGraphicsPipeline() {
     renderer_info.descritptor_pool = std::make_shared<DescriptorPool>(renderer_info.device, *renderer_info.descriptor_set_layout, renderer_info.swapchain->getImageViewCount());
 
     renderer_info.graphics_pipeline = std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(
-        renderer_info.device, renderer_info.swapchain, renderer_info.render_pass, std::move(vertexInputDescription), renderer_info.descriptor_set_layout.get()));
+        renderer_info.device, renderer_info.swapchain, renderer_info.render_pass, renderer_info.descriptor_set_layout, std::move(vertexInputDescription)));
 }
 
 void Renderer::begin(DrawPrimitive mode) {

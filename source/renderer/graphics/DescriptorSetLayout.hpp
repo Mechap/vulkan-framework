@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -24,8 +25,8 @@ class DescriptorSetLayout final : public NoCopy, public NoMove {
     [[nodiscard]] std::span<const VkDescriptorSetLayoutBinding> getBindings() const { return bindings; }
     [[nodiscard]] std::span<const VkDescriptorBindingFlags> getBindingFlags() const { return binding_flags; }
 
-    std::unique_ptr<VkDescriptorSetLayoutBinding> getLayoutBindings(std::uint32_t bindingIndex) const;
-    std::unique_ptr<VkDescriptorSetLayoutBinding> getLayoutBindings(std::string_view name);
+    std::optional<VkDescriptorSetLayoutBinding> getLayoutBindings(std::uint32_t bindingIndex) const;
+    std::optional<VkDescriptorSetLayoutBinding> getLayoutBindings(std::string_view name);
 
   private:
     std::shared_ptr<Device> device;

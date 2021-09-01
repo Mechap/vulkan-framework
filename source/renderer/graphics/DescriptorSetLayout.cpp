@@ -77,21 +77,21 @@ DescriptorSetLayout::DescriptorSetLayout(std::shared_ptr<Device> _device, std::s
 
 DescriptorSetLayout::~DescriptorSetLayout() { vkDestroyDescriptorSetLayout(device->getDevice(), descriptor_set_layout, nullptr); }
 
-std::unique_ptr<VkDescriptorSetLayoutBinding> DescriptorSetLayout::getLayoutBindings(std::uint32_t bindingIndex) const {
+std::optional<VkDescriptorSetLayoutBinding> DescriptorSetLayout::getLayoutBindings(std::uint32_t bindingIndex) const {
     auto it = bindings_lookup.find(bindingIndex);
 
     if (it == bindings_lookup.end()) {
-        return nullptr;
+        return std::nullopt;
     } else {
-        return std::make_unique<VkDescriptorSetLayoutBinding>(it->second);
+        return std::make_optional<VkDescriptorSetLayoutBinding>(it->second);
     }
 }
 
-std::unique_ptr<VkDescriptorSetLayoutBinding> DescriptorSetLayout::getLayoutBindings(std::string_view name) {
+std::optional<VkDescriptorSetLayoutBinding> DescriptorSetLayout::getLayoutBindings(std::string_view name) {
     auto it = ressources_lookup.find(name.data());
 
     if (it == ressources_lookup.end()) {
-        return nullptr;
+        return std::nullopt;
     } else {
         return getLayoutBindings(it->second);
     }

@@ -119,5 +119,5 @@ void Buffer::copy(const Buffer &src, const Buffer &dest, const std::shared_ptr<D
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd.getCommandBuffer();
 
-    vkQueueSubmit(device->getQueue<QueueFamilyType::GRAPHICS>(), 1, &submitInfo, nullptr);
+    vkQueueSubmit(device->getQueue(QueueFamilyType::GRAPHICS), 1, &submitInfo, nullptr);
 }

@@ -21,6 +21,7 @@ class CommandBuffer;
 class RenderPass;
 
 class DescriptorSetLayout;
+class PushConstants;
 
 struct VertexInputDescription {
     std::vector<VkVertexInputBindingDescription> bindings;
@@ -47,19 +48,21 @@ class GraphicsPipeline : public NoCopy, public NoMove {
     struct PipelineInfo {
         PipelineInfo(
             std::shared_ptr<Device> _device, std::shared_ptr<Swapchain> _swapchain, std::shared_ptr<RenderPass> _render_pass,
-            std::unique_ptr<VertexInputDescription> &&_input_info = nullptr, DescriptorSetLayout *_descriptor_set_layout = nullptr)
+            std::shared_ptr<DescriptorSetLayout> _descriptor_set_layout = nullptr, std::unique_ptr<VertexInputDescription> &&_input_info = nullptr)
             : device(std::move(_device)),
               swapchain(std::move(_swapchain)),
               render_pass(std::move(_render_pass)),
               input_info(std::move(_input_info)),
-              descriptor_set_layout(nostd::make_observer(_descriptor_set_layout)) {}
+              descriptor_set_layout(std::move(_descriptor_set_layout)) {}
 
         std::shared_ptr<Device> device;
         std::shared_ptr<Swapchain> swapchain;
         std::shared_ptr<RenderPass> render_pass;
 
         std::unique_ptr<VertexInputDescription> input_info;
-        nostd::observer_ptr<DescriptorSetLayout> descriptor_set_layout;
+
+        std::shared_ptr<DescriptorSetLayout> descriptor_set_layout;
+        std::shared_ptr<PushConstants> push_constants;
     };
 
   public:
@@ -78,7 +81,8 @@ class GraphicsPipeline : public NoCopy, public NoMove {
     [[nodiscard]] VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;
     [[nodiscard]] VkPipelineColorBlendStateCreateInfo createColorBlendState() const;
 
-    [[nodiscard]] VkPipelineLayoutCreateInfo createPipelineLayout(nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout = nullptr) const;
+    [[nodiscard]] VkPipelineLayoutCreateInfo createPipelineLayout(
+        nostd::observer_ptr<VkDescriptorSetLayout> descriptorSetLayout = nullptr, nostd::observer_ptr<PushConstants> pushConstants = nullptr) const;
 
   private:
     PipelineInfo pipeline_info;
