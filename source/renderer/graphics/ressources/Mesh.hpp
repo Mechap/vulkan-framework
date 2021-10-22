@@ -11,7 +11,11 @@
 class Device;
 class CommandBuffer;
 
-enum class DrawPrimitive;
+enum class DrawPrimitive {
+    TRIANGLE,
+    RECTANGLE,
+};
+
 
 struct VertexInputDescription;
 
@@ -31,15 +35,31 @@ class Mesh {
 
   public:
     Mesh() = default;
-    Mesh(DrawPrimitive _primitive, std::shared_ptr<Device> _device, std::span<Vertex> _vertices = {}, std::span<std::uint16_t> _indices = {});
+    Mesh(DrawPrimitive _primitive, std::shared_ptr<Device> _device, std::span<const Vertex> _vertices = {}, std::span<std::uint16_t> _indices = {});
 
     virtual ~Mesh() = default;
 
     Mesh(Mesh &&) noexcept = default;
     Mesh &operator=(Mesh &&) noexcept = default;
 
-    void draw(const CommandBuffer &cmd) const;
+    void bind(const CommandBuffer &cmd) const;
 
+  public:
+    [[nodiscard]] const auto &getVertexBuffer() const { return vertexBuffer; }
+    [[nodiscard]] auto &getVertexBuffer() { return vertexBuffer; }
+
+    [[nodiscard]] const auto &getIndexBuffer() const { return indexBuffer; }
+    [[nodiscard]] auto &getIndexBuffer() { return indexBuffer; }
+
+    [[nodiscard]] std::span<const Vertex> getVertices() const { return vertices; }
+    [[nodiscard]] std::span<Vertex> getVertices() { return vertices; }
+
+    [[nodiscard]] std::span<const std::uint16_t> getIndices() const { return indices; }
+    [[nodiscard]] std::span<std::uint16_t> getIndices() { return indices; }
+
+    DrawPrimitive primitive;
+
+  private:
     std::shared_ptr<Device> device;
 
     AllocatedBuffer vertexBuffer;
@@ -47,6 +67,4 @@ class Mesh {
 
     AllocatedBuffer indexBuffer;
     std::vector<std::uint16_t> indices;
-
-    DrawPrimitive primitive;
 };

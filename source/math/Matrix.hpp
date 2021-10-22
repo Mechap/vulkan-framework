@@ -21,14 +21,14 @@ namespace math {
 
         constexpr Matrix(std::size_t _size, std::span<const std::size_t, N> _dims, std::span<const std::size_t, N> _strides) : size(_size), dims(_dims), strides(_strides) {}
 
-        friend void swap(Matrix &a, Matrix &b) noexcept {
+        friend constexpr void swap(Matrix &a, Matrix &b) noexcept {
             std::swap(a.size, b.size);
             std::swap(a.dims, b.dims);
             std::swap(a.strides, b.strides);
         }
 
-        auto begin() { return static_cast<T &>(*this); }
-        auto cbegin() const { return static_cast<const T &>(*this); }
+        constexpr auto begin() { return static_cast<T &>(*this); }
+        constexpr auto cbegin() const { return static_cast<const T &>(*this); }
 
       private:
         std::size_t size;

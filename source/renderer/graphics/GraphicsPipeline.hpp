@@ -5,6 +5,7 @@
 #include <array>
 #include <glm/matrix.hpp>
 #include <optional>
+#include <renderer/graphics/ressources/Mesh.hpp>
 #include <span>
 #include <vector>
 
@@ -74,8 +75,26 @@ class GraphicsPipeline : public NoCopy, public NoMove {
     [[nodiscard]] VkPipeline getPipeline() const { return graphics_pipeline; }
     [[nodiscard]] VkPipelineLayout getPipelineLayout() const { return pipeline_layout; }
 
-    [[nodiscard]] static Mesh defaultMeshTriangle();
-    [[nodiscard]] static Mesh defaultMeshRectangle();
+	// TODO: update it to constexpr when C++20 is supported
+    [[nodiscard]] static const std::vector<Vertex> defaultMeshTriangleVertices() {
+        // TODO: update position coordinates with ortographic projection
+        return std::vector<Vertex>{
+            Vertex{.position = {0.5f, 0.5f, 0.0f}, .color = {1.f, 0.f, 0.f}},
+            Vertex{.position = {-0.5f, 0.5f, 0.0f}, .color = {0.f, 1.f, 0.f}},
+            Vertex{.position = {0.0f, -0.5f, 0.0f}, .color = {0.f, 0.f, 1.f}},
+        };
+    };
+
+    [[nodiscard]] static const std::vector<Vertex> defaultMeshRectangleVertices() {
+        return std::vector<Vertex>{
+            Vertex{.position = {400.0f, 400.0f, 0.0f}, .color = {1.f, 0.f, 0.f}},
+            Vertex{.position = {400.0f, 200.0f, 0.0f}, .color = {0.f, 1.f, 0.f}},
+            Vertex{.position = {200.0f, 400.0f, 0.0f}, .color = {0.f, 0.f, 1.f}},
+            Vertex{.position = {200.0f, 200.0f, 0.0f}, .color = {1.f, 1.f, 0.f}},
+        };
+    };
+
+    [[nodiscard]] static const std::vector<std::uint16_t> defaultMeshRectangleIndices() { return std::vector<std::uint16_t>{0, 1, 3, 0, 2, 1}; }
 
   private:
     [[nodiscard]] VkPipelineViewportStateCreateInfo createViewportState(const VkViewport &viewport, const VkRect2D &scissor) const;

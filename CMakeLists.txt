@@ -11,11 +11,13 @@ if (${FORCE_COLORED_OUTPUT})
     endif()
 endif()
 
+#[[
 set(CMAKE_CXX_CLANG_TIDY
 	clang-tidy;
 	-checks=-*,cppcoreguidelines-*,bugprone-*,performance-*,modernize-*,analyze-*,-modernize-use-trailing-return-type*,-cppcoreguidelines-avoid-magic-numbers*;
 	-p=std=c++20;
 	--use-color)
+]]
 
 # add fmt lib
 include(FetchContent)

@@ -7,7 +7,6 @@
 #include "renderer/graphics/RenderPass.hpp"
 #include "renderer/graphics/Renderer.hpp"
 #include "renderer/graphics/Shader.hpp"
-#include "renderer/graphics/ressources/Mesh.hpp"
 #include "renderer/sync/CommandBuffer.hpp"
 
 [[nodiscard]] VertexInputDescription Vertex::getVertexInputDescription() {
@@ -65,6 +64,7 @@ namespace {
         return info;
     }
 
+	// TODO: make a more intuitive implementation
     [[nodiscard]] VkPipelineVertexInputStateCreateInfo createVertexInputState(const nostd::not_null<VertexInputDescription> inputInfo) {
         VkPipelineVertexInputStateCreateInfo info{};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -166,7 +166,7 @@ GraphicsPipeline::GraphicsPipeline(GraphicsPipeline::PipelineInfo &&pipelineInfo
     shader_stages.push_back(createShaderStage(fragmentShader));
 
     // pipeline layout
-	auto set_layout = pipeline_info.descriptor_set_layout->getLayout();
+    auto set_layout = pipeline_info.descriptor_set_layout->getLayout();
     auto pipelineLayoutInfo = createPipelineLayout(nostd::make_observer(&set_layout));
 
     if (vkCreatePipelineLayout(pipeline_info.device->getDevice(), &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
@@ -214,50 +214,68 @@ GraphicsPipeline::~GraphicsPipeline() {
     vkDestroyPipeline(pipeline_info.device->getDevice(), graphics_pipeline, nullptr);
 }
 
-[[nodiscard]] Mesh GraphicsPipeline::defaultMeshTriangle() {
-    auto mesh = Mesh();
+/*
+[[nodiscard]] constexpr std::array<Vertex, 3> GraphicsPipeline::defaultMeshTriangleVertices() {
+    return std::array<Vertex, 3> {
+        Vertex{.position = {0.5f, 0.5f, 0.0f}, .color = {1.f, 0.f, 0.f}},
+        Vertex{.position = {-0.5f, 0.5f, 0.0f}, .color = {0.f, 1.f, 0.f}},
+        Vertex{.position = {0.0f, -0.5f, 0.0f}, .color = {0.f, 0.f, 1.f}},
+    };
 
-    mesh.vertices.resize(3);
+mesh.getVertices().resize(3);
 
-    // vertex positions
-    mesh.vertices[0].position = {0.5f, 0.5f, 0.0f};
-    mesh.vertices[1].position = {-0.5f, 0.5f, 0.0f};
-    mesh.vertices[2].position = {0.0f, -0.5f, 0.0f};
+// vertex positions
+mesh.getVertices()[0].position = {0.5f, 0.5f, 0.0f};
+mesh.getVertices()[1].position = {-0.5f, 0.5f, 0.0f};
+mesh.getVertices()[2].position = {0.0f, -0.5f, 0.0f};
 
-    // vertex colors
-    mesh.vertices[0].color = {1.f, 0.f, 0.0f};
-    mesh.vertices[1].color = {0.f, 1.f, 0.0f};
-    mesh.vertices[2].color = {0.f, 0.f, 1.0f};
+// vertex colors
+mesh.getVertices()[0].color = {1.f, 0.f, 0.0f};
+mesh.getVertices()[1].color = {0.f, 1.f, 0.0f};
+mesh.getVertices()[2].color = {0.f, 0.f, 1.0f};
 
-    mesh.primitive = DrawPrimitive::TRIANGLE;
-
-    return mesh;
-}
-
-[[nodiscard]] Mesh GraphicsPipeline::defaultMeshRectangle() {
-    auto mesh = Mesh();
-    mesh.vertices.resize(4);
-
-    // vertex positions
-    mesh.vertices[0].position = {400.0f, 400.0f, 0.0f};  // right bottom
-    mesh.vertices[1].position = {400.0f, 200.0f, 0.0f};  // right top
-    mesh.vertices[2].position = {200.0f, 400.0f, 0.0f};  // left bottom
-    mesh.vertices[3].position = {200.0f, 200.0f, 0.0f};  // left top
-
-    // vertex colors
-    mesh.vertices[0].color = {1.f, 0.f, 0.0f};
-    mesh.vertices[1].color = {0.f, 1.f, 0.0f};
-    mesh.vertices[2].color = {0.f, 0.f, 1.0f};
-    mesh.vertices[3].color = {1.f, 1.f, 0.0f};
-
-    // index buffer
-    mesh.indices.resize(6);
-    mesh.indices = {0, 1, 3, 0, 2, 1};
-
-    mesh.primitive = DrawPrimitive::RECTANGLE;
+mesh.primitive = DrawPrimitive::TRIANGLE;
 
     return mesh;
 }
+
+[[nodiscard]] constexpr std::array<Vertex, 4> GraphicsPipeline::defaultMeshRectangleVertices() {
+    return std::array<Vertex, 4>{
+        Vertex{.position = {400.0f, 400.0f, 0.0f}, .color = {1.f, 0.f, 0.f}},
+        Vertex{.position = {400.0f, 200.0f, 0.0f}, .color = {0.f, 1.f, 0.f}},
+        Vertex{.position = {200.0f, 400.0f, 0.0f}, .color = {0.f, 0.f, 1.f}},
+        Vertex{.position = {200.0f, 200.0f, 0.0f}, .color = {1.f, 1.f, 0.f}},
+    };
+auto mesh = Mesh();
+mesh.getVertices().resize(4);
+
+// vertex positions
+mesh.getVertices()[0].position = {400.0f, 400.0f, 0.0f};  // right bottom
+mesh.getVertices()[1].position = {400.0f, 200.0f, 0.0f};  // right top
+mesh.getVertices()[2].position = {200.0f, 400.0f, 0.0f};  // left bottom
+mesh.getVertices()[3].position = {200.0f, 200.0f, 0.0f};  // left top
+
+// vertex colors
+mesh.getVertices()[0].color = {1.f, 0.f, 0.0f};
+mesh.getVertices()[1].color = {0.f, 1.f, 0.0f};
+mesh.getVertices()[2].color = {0.f, 0.f, 1.0f};
+mesh.getVertices()[3].color = {1.f, 1.f, 0.0f};
+
+// index buffer
+mesh.getIndices().resize(6);
+mesh.getIndices() = {0, 1, 3, 0, 2, 1};
+
+mesh.primitive = DrawPrimitive::RECTANGLE;
+
+return mesh;
+}
+
+[[nodiscard]] constexpr std::array<std::uint16_t, 6> GraphicsPipeline::defaultMeshRectangleIndices() {
+    return std::array<std::uint16_t, 6>{
+        0, 1, 3, 0, 2, 1,
+    };
+}
+*/
 
 void GraphicsPipeline::bind(const CommandBuffer &commandBuffer) const { vkCmdBindPipeline(commandBuffer.getCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline); }
 

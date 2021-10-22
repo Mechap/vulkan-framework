@@ -60,16 +60,11 @@ int main() {
 
         auto graphicsPipeline =
             std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(device, swapchain, renderPass, descriptorSetLayout, std::move(vertexInputDescription)));
-        auto defaultMesh = graphicsPipeline->defaultMeshRectangle();
 
-        // shaders
-        auto vertexBuffer = Buffer::createVertexBuffer(defaultMesh.vertices, device);
-        defaultMesh.vertexBuffer.buffer = vertexBuffer.getBuffer();
-        defaultMesh.vertexBuffer.allocation = vertexBuffer.getAllocation();
+        auto defaultVertices = GraphicsPipeline::defaultMeshRectangleVertices();
+        auto defaultIndices = GraphicsPipeline::defaultMeshRectangleIndices();
 
-        auto indexBuffer = Buffer::createIndexBuffer(defaultMesh.indices, device);
-        defaultMesh.indexBuffer.buffer = indexBuffer.getBuffer();
-        defaultMesh.indexBuffer.allocation = indexBuffer.getAllocation();
+        auto defaultMesh = Mesh(DrawPrimitive::RECTANGLE, device, {defaultVertices.begin(), defaultVertices.end()}, {defaultIndices.begin(), defaultIndices.end()});
 
         std::vector<Buffer> uniformBuffers;
         uniformBuffers.reserve(swapchain->getImageViewCount());
@@ -100,7 +95,7 @@ int main() {
         ubo.proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -100.0f, 100.0f);
 
         while (!window.shouldClose()) {
-            auto commandBuffer = getCurrentFrame(frames, frameNumber).commandBuffer;
+            const auto &commandBuffer = getCurrentFrame(frames, frameNumber).commandBuffer;
 
             window.updateEvents();
 
@@ -120,20 +115,15 @@ int main() {
 
             graphicsPipeline->bind(commandBuffer);
 
-            VkDeviceSize offset = 0;
-            vkCmdBindVertexBuffers(commandBuffer.getCommandBuffer(), 0, 1, &defaultMesh.vertexBuffer.buffer, &offset);
-            vkCmdBindIndexBuffer(commandBuffer.getCommandBuffer(), defaultMesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT16);
+            defaultMesh.bind(commandBuffer);
 
             descriptorSets[swapchainImageIndex].bind(*graphicsPipeline, commandBuffer);
             descriptorSets[swapchainImageIndex].update(uniformBuffers[swapchainImageIndex]);
 
-            vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.getIndices().size()), 1, 0, 0, 0);
 
-            /*
-			ubo.model = glm::translate(ubo.model, glm::vec3(200.f, 200.f, 0.f));
-			uniformBuffers[swapchainImageIndex].update(ubo);
-			vkCmdDrawIndexed(commandBuffer.getCommandBuffer(), static_cast<std::uint32_t>(defaultMesh.indices.size()), 1, 0, 0, 0);
-            */
+            ubo.model = glm::translate(ubo.model, glm::vec3(0.1f, 0.1f, 0.f));
+            uniformBuffers[swapchainImageIndex].update(ubo);
 
             renderPass->end(commandBuffer);
             commandBuffer.end();

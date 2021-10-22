@@ -9,6 +9,7 @@ class Instance;
 class Device;
 class Swapchain;
 class RenderPass;
+class Framebuffer;
 
 class DescriptorSetLayout;
 class DescriptorPool;
@@ -21,11 +22,7 @@ struct VertexInputDescription;
 struct ShaderResource;
 
 class Window;
-
-enum class DrawPrimitive {
-    TRIANGLE,
-    RECTANGLE,
-};
+enum class DrawPrimitive;
 
 class Renderer {
   public:
@@ -47,7 +44,7 @@ class Renderer {
     explicit Renderer(std::shared_ptr<Window> _window);
 
     void begin(DrawPrimitive mode);
-    void draw(Mesh &_mesh);
+    void draw(auto &&_mesh);
     void end();
 
     ~Renderer();
@@ -57,7 +54,12 @@ class Renderer {
 
   private:
     RendererInfo renderer_info;
-    Mesh mesh;
 
-	std::vector<Buffer> vbos;
+	std::vector<Mesh> meshes;
+
+    std::vector<Buffer> uniform_buffers;
+    std::vector<DescriptorSet> desciptor_sets;
+    std::vector<Framebuffer> framebuffers;
+
+    std::uint32_t frame_number{0};
 };

@@ -84,7 +84,6 @@ Buffer Buffer::createIndexBuffer(std::span<const std::uint16_t> indices, const s
     return indexBuffer;
 }
 
-// TODO: should I use staging buffers to transfer data to uniform buffers or make them visible from both the cpu and gpu ?
 Buffer Buffer::createUniformBuffer(std::uint32_t bufferSize, const std::shared_ptr<Device> &device) {
     auto stagingBuffer = Buffer(device, Type::UBO, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
