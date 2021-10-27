@@ -3,6 +3,7 @@
 #include <memory>
 #include <span>
 
+#include "renderer/graphics/ressources/Buffer.hpp"
 #include "renderer/graphics/ressources/Mesh.hpp"
 
 class Instance;
@@ -42,12 +43,13 @@ class Renderer {
 
   public:
     explicit Renderer(std::shared_ptr<Window> _window);
+    ~Renderer();
 
-    void begin(DrawPrimitive mode);
-    void draw(auto &&_mesh);
+    void begin();
+    void draw(const Mesh &_mesh, const UniformObject &_uniform_data);
     void end();
 
-    ~Renderer();
+    [[nodiscard]] const auto &getInfo() const { return renderer_info; }
 
   private:
     void createGraphicsPipeline();
@@ -55,11 +57,13 @@ class Renderer {
   private:
     RendererInfo renderer_info;
 
-	std::vector<Mesh> meshes;
+    std::vector<Mesh> meshes;
 
-    std::vector<Buffer> uniform_buffers;
-    std::vector<DescriptorSet> desciptor_sets;
-    std::vector<Framebuffer> framebuffers;
+    std::vector<UniformObject> uniforms_data;
+    std::vector<std::vector<Buffer>> uniform_buffers;
+
+    std::vector<std::vector<DescriptorSet>> desciptor_sets;
+    std::vector<std::unique_ptr<Framebuffer>> framebuffers;
 
     std::uint32_t frame_number{0};
 };

@@ -75,7 +75,7 @@ class GraphicsPipeline : public NoCopy, public NoMove {
     [[nodiscard]] VkPipeline getPipeline() const { return graphics_pipeline; }
     [[nodiscard]] VkPipelineLayout getPipelineLayout() const { return pipeline_layout; }
 
-	// TODO: update it to constexpr when C++20 is supported
+	// TODO: update it to constexpr when std::vector becomes a litteral type in c++20
     [[nodiscard]] static const std::vector<Vertex> defaultMeshTriangleVertices() {
         // TODO: update position coordinates with ortographic projection
         return std::vector<Vertex>{

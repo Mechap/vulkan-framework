@@ -39,6 +39,9 @@ class Mesh {
 
     virtual ~Mesh() = default;
 
+	Mesh(const Mesh &) = default;
+	Mesh &operator=(const Mesh &) = default;
+
     Mesh(Mesh &&) noexcept = default;
     Mesh &operator=(Mesh &&) noexcept = default;
 

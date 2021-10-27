@@ -16,6 +16,7 @@
 #include "renderer/graphics/Framebuffer.hpp"
 #include "renderer/graphics/GraphicsPipeline.hpp"
 #include "renderer/graphics/RenderPass.hpp"
+#include "renderer/graphics/Renderer.hpp"
 #include "renderer/graphics/ressources/DecriptorSet.hpp"
 #include "renderer/graphics/ressources/DescriptorPool.hpp"
 #include "renderer/graphics/ressources/Mesh.hpp"
@@ -23,6 +24,45 @@
 #include "renderer/sync/Semaphore.hpp"
 #include "window.hpp"
 
+int main() {
+    try {
+        auto window = std::make_shared<Window>(WindowSpec("application", config::window_size));
+        auto renderer = Renderer(window);
+
+        renderer.begin();
+
+        auto defaultVertices = GraphicsPipeline::defaultMeshRectangleVertices();
+        auto defaultIndices = GraphicsPipeline::defaultMeshRectangleIndices();
+
+        auto mesh1 = Mesh(DrawPrimitive::RECTANGLE, renderer.getInfo().device, {defaultVertices.begin(), defaultVertices.end()}, {defaultIndices.begin(), defaultIndices.end()});
+        auto ubo1 = UniformObject();
+        ubo1.model = glm::mat4(1.0f);
+        ubo1.view = glm::mat4(1.0f);
+        ubo1.proj = glm::ortho(0.0f, 800.0f, 0.0f, 600.0f, -100.0f, 100.0f);
+
+        renderer.draw(mesh1, ubo1);
+
+        auto mesh2 = Mesh(DrawPrimitive::RECTANGLE, renderer.getInfo().device, {defaultVertices.begin(), defaultVertices.end()}, {defaultIndices.begin(), defaultIndices.end()});
+        auto ubo2 = ubo1; 
+        ubo2.model = glm::translate(ubo2.model, glm::vec3(200.f, 200.f, 0.f));
+
+        renderer.draw(mesh2, ubo2);
+
+        auto mesh3 = Mesh(DrawPrimitive::RECTANGLE, renderer.getInfo().device, {defaultVertices.begin(), defaultVertices.end()}, {defaultIndices.begin(), defaultIndices.end()});
+        auto ubo3 = ubo1; 
+        ubo3.model = glm::translate(ubo2.model, glm::vec3(-100.f, -100.f, 0.f));
+
+		renderer.draw(mesh3, ubo3);
+
+        renderer.end();
+    } catch (const std::exception &e) {
+        fmt::print(fmt::fg(fmt::color::orange_red) | fmt::emphasis::bold, "[exception] : {}\n", e.what());
+    }
+
+    return 0;
+}
+
+/*
 struct FrameData {
     explicit FrameData(const std::shared_ptr<Device> &device)
         : presentSemaphore(*device), renderSemaphore(*device), renderFence(device), commandPool(device, QueueFamilyType::GRAPHICS), commandBuffer(*device, commandPool) {}
@@ -183,3 +223,4 @@ int main() {
 
     return 0;
 }
+*/

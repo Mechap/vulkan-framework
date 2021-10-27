@@ -129,9 +129,10 @@ std::vector<const char *> Instance::getRequiredExtensions() {
 
     std::vector<const char *> extensions(glfwExtensions, glfwExtensions + extensionCount);
     if constexpr (config::enable_validation_layers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        extensions.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		extensions.emplace_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
-    extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+    extensions.emplace_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
     for (const char *extensionName : extensions) {
         fmt::print("{}\n", extensionName);

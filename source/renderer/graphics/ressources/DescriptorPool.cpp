@@ -8,10 +8,6 @@
 #include "renderer/graphics/DescriptorSetLayout.hpp"
 
 DescriptorPool::DescriptorPool(std::shared_ptr<Device> _device, const DescriptorSetLayout &layout, const std::uint32_t poolSize) : device(std::move(_device)), pool_size(poolSize) {
-    if (poolSize > MAX_SETS_PER_POOL) {
-        throw std::runtime_error("pool size mustn't be greater than swapchain image count!");
-    }
-
     std::unordered_map<VkDescriptorType, std::uint32_t> descriptorTypeCounts;
     const auto &bindings = layout.getBindings();
 
@@ -93,7 +89,7 @@ VkDescriptorPool DescriptorPool::createPool(VkDescriptorPoolCreateFlags flags) {
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.flags = flags;
 
-    poolInfo.maxSets = MAX_SETS_PER_POOL;
+    poolInfo.maxSets = pool_size;
     poolInfo.poolSizeCount = std::uint32_t(pool_sizes.size());
     poolInfo.pPoolSizes = pool_sizes.data();
 

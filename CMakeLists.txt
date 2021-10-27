@@ -54,7 +54,6 @@ set(sources
 	${SOURCE_DIR}/renderer/graphics/Framebuffer.cpp
 	${SOURCE_DIR}/renderer/graphics/Renderer.cpp
     ${SOURCE_DIR}/renderer/graphics/DescriptorSetLayout.cpp
-	${SOURCE_DIR}/renderer/graphics/PushConstants.cpp
 
 	# renderer/sync
 	${SOURCE_DIR}/renderer/sync/CommandPool.cpp
@@ -73,7 +72,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC fmt::fmt)
 target_include_directories(${PROJECT_NAME} PUBLIC ${SOURCE_DIR})
 target_compile_options(${PROJECT_NAME} PRIVATE
   $<$<CXX_COMPILER_ID:MSVC>:/W4>
-  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-parameter>
+  $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic -Wno-missing-field-initializers -Wno-unused-parameter -g>
 )
 
 # Vulkan

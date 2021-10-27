@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fmt/core.h>
+
 #include <algorithm>
 #include <concepts>
 #include <deque>

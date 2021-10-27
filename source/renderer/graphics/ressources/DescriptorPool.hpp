@@ -11,8 +11,6 @@ class Device;
 class DescriptorSetLayout;
 
 class DescriptorPool final : public NoCopy, public NoMove {
-    static constexpr std::uint32_t MAX_SETS_PER_POOL = 5;  // swapchain image count
-
   public:
     DescriptorPool(std::shared_ptr<Device> _device, const DescriptorSetLayout &layout, std::uint32_t poolSize);
     ~DescriptorPool();
