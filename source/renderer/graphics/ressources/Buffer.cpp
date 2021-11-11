@@ -56,7 +56,7 @@ void Buffer::update(const UniformObject &ubo) {
 
 Buffer Buffer::createVertexBuffer(std::span<const Vertex> vertices, const std::shared_ptr<Device> &device) {
     const VkDeviceSize bufferSize = vertices.size() * sizeof(Vertex);
-    auto stagingBuffer = Buffer(device, Type::VBO, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_COPY);
+    auto stagingBuffer = Buffer(device, Type::STAGING, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
     void *data;
     vmaMapMemory(device->getAllocator(), stagingBuffer.getAllocation(), &data);
@@ -71,7 +71,7 @@ Buffer Buffer::createVertexBuffer(std::span<const Vertex> vertices, const std::s
 
 Buffer Buffer::createIndexBuffer(std::span<const std::uint16_t> indices, const std::shared_ptr<Device> &device) {
     const VkDeviceSize bufferSize = indices.size() * sizeof(std::uint16_t);
-    auto stagingBuffer = Buffer(device, Type::IBO, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    auto stagingBuffer = Buffer(device, Type::STAGING, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
     void *data;
     vmaMapMemory(device->getAllocator(), stagingBuffer.getAllocation(), &data);
@@ -85,7 +85,7 @@ Buffer Buffer::createIndexBuffer(std::span<const std::uint16_t> indices, const s
 }
 
 Buffer Buffer::createUniformBuffer(std::uint32_t bufferSize, const std::shared_ptr<Device> &device) {
-    auto stagingBuffer = Buffer(device, Type::UBO, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    auto stagingBuffer = Buffer(device, Type::STAGING, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
 
     auto uniformBuffer = Buffer(device, Type::UBO, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_GPU_ONLY);
     copy(stagingBuffer, uniformBuffer, device);

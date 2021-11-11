@@ -53,7 +53,8 @@ namespace nostd {
         constexpr observer_ptr(element_type *ptr) noexcept : data(ptr) {}
 
         template <typename U>
-        requires std::same_as<U, element_type> || std::convertible_to<U *, element_type *> observer_ptr(const observer_ptr<U> &other)
+			requires std::same_as<U, element_type> || std::convertible_to<U *, element_type *> 
+		observer_ptr(const observer_ptr<U> &other)
             : observer_ptr(static_cast<element_type *>(other.get())) {}
 
         [[nodiscard]] constexpr element_type *get() const noexcept { return data; }

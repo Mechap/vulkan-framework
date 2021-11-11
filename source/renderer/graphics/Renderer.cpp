@@ -52,7 +52,7 @@ void Renderer::createGraphicsPipeline() {
     auto vertexInputDescription = std::make_unique<VertexInputDescription>(Vertex::getVertexInputDescription());
 
     renderer_info.graphics_pipeline = std::make_shared<GraphicsPipeline>(GraphicsPipeline::PipelineInfo(
-        renderer_info.device, renderer_info.swapchain, renderer_info.render_pass, renderer_info.descriptor_set_layout, std::move(vertexInputDescription)));
+	renderer_info.device, renderer_info.swapchain, renderer_info.render_pass, renderer_info.descriptor_set_layout, std::move(vertexInputDescription)));
 
     uniform_buffers.reserve(renderer_info.swapchain->getImageViewCount());
     desciptor_sets.reserve(renderer_info.swapchain->getImageViewCount());

@@ -36,6 +36,7 @@ set(CMAKE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(sources
 	${SOURCE_DIR}/vendor/vk_mem_alloc.cpp
+	${SOURCE_DIR}/vendor/stb_image.cpp
 
 	${SOURCE_DIR}/main.cpp
 
@@ -63,6 +64,7 @@ set(sources
 
 	# renderer/ressources
 	${SOURCE_DIR}/renderer/graphics/ressources/Buffer.cpp
+	${SOURCE_DIR}/renderer/graphics/ressources/Image.cpp
 	${SOURCE_DIR}/renderer/graphics/ressources/Mesh.cpp
 	${SOURCE_DIR}/renderer/graphics/ressources/DescriptorPool.cpp
 	${SOURCE_DIR}/renderer/graphics/ressources/DescriptorSet.cpp

@@ -20,6 +20,7 @@ class Buffer final {
         VBO,
         IBO,
         UBO,
+		STAGING,
     };
 
   public:
